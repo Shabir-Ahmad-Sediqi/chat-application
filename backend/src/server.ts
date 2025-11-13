@@ -4,6 +4,7 @@ import dotenv from "dotenv"
 import authRoutes from "./routes/auth.route.js"
 import sendMessage from "./routes/message.route.js"
 import path from "path"
+import { connectDB } from "./lib/db.js"
 
 dotenv.config()
 
@@ -33,5 +34,6 @@ app.get("/", (req: Request, res: Response) => {
 
 const PORT = process.env.PORT || 3000
 app.listen(PORT, () => {
-    console.log(`Server is litsening on port http://localhost:${PORT}/`)
+    console.log(`Server is litsening on port http://localhost:${PORT}`)
+    connectDB()
 })
