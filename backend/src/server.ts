@@ -21,7 +21,7 @@ app.use("/api/message", sendMessage)
 if (process.env.NODE_ENV === "production"){
     app.use(express.static(path.join(__dirname, "../frontend/dist")));
 
-    app.get("*", (_, res: Response) => {
+    app.get("/*path", (_, res: Response) => {
         res.sendFile(path.join(__dirname, "../frontend","dist","index.html"));
     })
 }
