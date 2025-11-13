@@ -19,7 +19,8 @@
     "express": "^5.1.0",
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.10.1",
-    "nodemon": "^3.1.11"
+    "nodemon": "^3.1.11",
+    "resend": "^6.4.2"
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",

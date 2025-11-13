@@ -3,6 +3,8 @@ import { Request, Response } from "express"
 import User, {IUser} from "../models/User.js";
 import bcrypt from "bcryptjs"
 import { generateToken } from "../lib/utils.js";
+import { sendWelcomeEmail } from "../emails/emailHandler.js";
+import "dotenv/config"
 
 interface ApiResponse<T>{
     success: boolean;
@@ -62,6 +64,19 @@ export const signUpHandler = async (req: Request, res: Response<ApiResponse<Publ
                     profilePic: newUser.profilePic
                 }
             })
+
+            // send welcome email
+
+            try{
+                const fromAddress = process.env.CLIENT_URL;
+                if (!fromAddress) {
+                    console.warn("EMAIL_FROM not configured; skipping welcome email.");
+                } else {
+                    await sendWelcomeEmail(newUser.email, newUser.fullName, fromAddress);
+                }
+            }catch(error){
+                console.log(`Failed to send email ${error}`)
+            }
         }else{
             res.status(400).json({success: false, message: "Invalid Data"})
         }
