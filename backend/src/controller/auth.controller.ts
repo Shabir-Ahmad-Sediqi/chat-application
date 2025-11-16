@@ -89,9 +89,11 @@ export const signUpHandler = async (req: Request, res: Response<ApiResponse<Publ
 };
 
 export const loginHandler = async (req: Request, res: Response<ApiResponse<PublicUserResponse>>) => {
-    try{
-        const {email, password} = req.body;
 
+    const {email, password} = req.body;
+    if (!email || !password) res.status(400).json({success: false, message: "Both fields are required"})
+
+    try{
         const existingUser = await User.findOne({email});
         if (!existingUser) return res.status(400).json({success: false, message: "Invalid Credentials"});
 
