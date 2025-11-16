@@ -3,8 +3,8 @@ import { loginHandler, logoutHandler, signUpHandler } from "../controller/auth.c
 
 const router = express.Router();
 
-router.route("/login").get(loginHandler);
+router.route("/login").post(loginHandler);
 router.route("/signup").post(signUpHandler);
-router.route("/logout").get(logoutHandler);
+router.route("/logout").post(logoutHandler);
 
 export default router 

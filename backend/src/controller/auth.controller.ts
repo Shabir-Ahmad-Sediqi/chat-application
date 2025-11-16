@@ -88,10 +88,34 @@ export const signUpHandler = async (req: Request, res: Response<ApiResponse<Publ
     }
 };
 
-export const loginHandler = (req: Request, res: Response<ApiResponse<string>>) => {
-    
-};
+export const loginHandler = async (req: Request, res: Response<ApiResponse<PublicUserResponse>>) => {
+    try{
+        const {email, password} = req.body;
 
+        const existingUser = await User.findOne({email});
+        if (!existingUser) return res.status(400).json({success: false, message: "Invalid Credentials"});
+
+        const comparePassword = await bcrypt.compare(password, existingUser.password);
+        if (!comparePassword)  return res.status(400).json({success: false, message: "Invalid Credentials"});
+
+        generateToken(existingUser._id, res);
+
+
+        res.status(201).json({
+            success: true,
+            data: {
+                _id: existingUser._id.toString(),
+                fullName: existingUser.fullName,
+                email: existingUser.email,
+                profilePic: existingUser.profilePic
+            }
+        })
+    }
+    catch(error){
+            res.status(500).json({success: false, message: `Internal server error at the login ${error}`})
+        }
+    }
 export const logoutHandler = (req: Request, res: Response<ApiResponse<string>>) => {
-    res.status(200).json({success: true, message: "Logout "})
+    res.cookie("jwt", "", {maxAge: 0})
+    res.status(200).json({success: true, message: "Logged out successfully"})
 }
