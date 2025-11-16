@@ -5,17 +5,23 @@ import bcrypt from "bcryptjs"
 import { generateToken } from "../lib/utils.js";
 import { sendWelcomeEmail } from "../emails/emailHandler.js";
 import "dotenv/config"
+import imagekit from "../lib/imageKit.js";
 
 interface ApiResponse<T>{
     success: boolean;
     data?: T;
     message?: string
-}
+};
 interface PublicUserResponse {
   _id: string;
   fullName: string;
   email: string;
   profilePic?: string;
+};
+
+interface AuthRequest extends Request {
+    user?: { _id: string };
+    file?: Express.Multer.File; // <- TypeScript knows file exists
 }
 
 export const signUpHandler = async (req: Request, res: Response<ApiResponse<PublicUserResponse>>) => {
@@ -103,7 +109,7 @@ export const loginHandler = async (req: Request, res: Response<ApiResponse<Publi
         generateToken(existingUser._id, res);
 
 
-        res.status(201).json({
+        res.status(200).json({
             success: true,
             data: {
                 _id: existingUser._id.toString(),
@@ -116,8 +122,72 @@ export const loginHandler = async (req: Request, res: Response<ApiResponse<Publi
     catch(error){
             res.status(500).json({success: false, message: `Internal server error at the login ${error}`})
         }
-    }
+};
+
 export const logoutHandler = (req: Request, res: Response<ApiResponse<string>>) => {
     res.cookie("jwt", "", {maxAge: 0})
     res.status(200).json({success: true, message: "Logged out successfully"})
+};
+
+export const updateProfile = async (
+    req: AuthRequest,
+    res: Response<ApiResponse<PublicUserResponse>>
+) => {
+    try {
+        const userId = req.user?._id;
+        if (!userId) return res.status(401).json({ success: false, message: "Unauthorized" });
+
+        const file = req.file;
+        if (!file) return res.status(400).json({ success: false, message: "No file uploaded" });
+
+        const upload = await imagekit.upload({
+            file: file.buffer.toString("base64"),
+            fileName: `img-${Date.now()}`
+        }); 
+
+        const updatedUser = await User.findByIdAndUpdate(
+            userId,
+            { profilePic: upload.url },
+            { new: true }
+        );
+
+        if (!updatedUser) return res.status(404).json({ success: false, message: "User not found" });
+
+        res.status(200).json({
+            success: true,
+            data: {
+                _id: updatedUser._id.toString(),
+                fullName: updatedUser.fullName,
+                email: updatedUser.email,
+                profilePic: updatedUser.profilePic
+            }
+        });
+
+    } catch (error: unknown) {
+        const message = error instanceof Error ? error.message : String(error);
+        res.status(500).json({ success: false, message });
+    }
+};
+
+export const isAuthenticated = async (req: AuthRequest, res: Response<ApiResponse<PublicUserResponse>>) => {
+    try {
+        const userId = req.user?._id;
+        if (!userId) return res.status(401).json({ success: false, message: "Unauthorized" });
+
+        const existingUser = await User.findById(userId);
+        if (!existingUser) return res.status(404).json({ success: false, message: "User not found" });
+
+        res.status(200).json({
+            success: true,
+            data: {
+                _id: existingUser._id.toString(),
+                fullName: existingUser.fullName,
+                email: existingUser.email,
+                profilePic: existingUser.profilePic
+            }
+        });
+    } catch (error: unknown) {
+        const message = error instanceof Error ? error.message : String(error);
+        res.status(500).json({ success: false, message });
+    }
 }
