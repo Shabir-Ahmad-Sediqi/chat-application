@@ -3,12 +3,6 @@ import Message from "../models/message.js";
 import User from "../models/User.js";
 import imagekit from "../lib/imageKit.js";
 
-interface ApiResponse<T>{
-    success: boolean;
-    data?: T;
-    message?: string
-};
-
 interface AuthRequest extends Request {
     user?: { _id: string };
     file?: Express.Multer.File; // <- TypeScript knows file exists
