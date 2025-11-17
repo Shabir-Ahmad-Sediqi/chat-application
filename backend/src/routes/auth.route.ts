@@ -11,7 +11,7 @@ router.use(arcjetProtection)
 
 router.route("/login").post(loginHandler);
 router.route("/signup").post(signUpHandler);
-router.route("/logout").post(logoutHandler);
+router.route("/logout").post(protectRoute, logoutHandler);
 router.route("/update-profile").put(protectRoute,upload.single("profilePic"), updateProfile)
 
 // check if user is authenticated
