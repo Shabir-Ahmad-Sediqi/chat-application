@@ -23,7 +23,9 @@ const messageSchema = new mongoose.Schema<IMessage>(
             required: true
         },
         text: {
-            type: String
+            type: String,
+            trim: true,
+            maxlength: 2000
         },
         image: {
             type: String
@@ -33,6 +35,14 @@ const messageSchema = new mongoose.Schema<IMessage>(
 );
 
 messageSchema.index({ senderId: 1, receiverId: 1, createdAt: -1 });
+messageSchema.index({ receiverId: 1, senderId: 1, createdAt: -1 });
+
+messageSchema.pre("validate", function (next){
+    if (!this.text && !this.image){
+        return next(new Error("text or image is required"))
+    }
+    next()
+})
 
 const Message: Model<IMessage> =
   (mongoose.models.Message as Model<IMessage>) ||
