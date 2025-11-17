@@ -49,6 +49,21 @@ export const sendMessage = async (req: AuthRequest, res: Response) => {
         const senderId = req.user?._id;
         const file = req.file;
 
+        if (!senderId) {
+            return res.status(401).json({ message: "Unauthorized" });
+        }
+
+        if (!text && !file) {
+            return res.status(400).json({ message: "Text or image is required." });
+            }
+        if (senderId === receiverId) {
+            return res.status(400).json({ message: "Cannot send messages to yourself." });
+            }
+        const receiverExists = await User.exists({ _id: receiverId });
+        if (!receiverExists) {
+            return res.status(404).json({ message: "Receiver not found." });
+            }
+
         let imageUrl: string | undefined;
         if (file){
             // upload image to imageKit
@@ -85,8 +100,6 @@ export const getChatPartners = async (req: AuthRequest, res: Response) => {
         if (!loggedInUserId){
             return res.status(400).json({success: false, message: "You are possibly not logged in"})
         }
-        console.log("ID LOggedin user")
-        console.log(loggedInUserId)
 
         const messages = await Message.find({
             $or: [
@@ -94,8 +107,6 @@ export const getChatPartners = async (req: AuthRequest, res: Response) => {
                 {receiverId: loggedInUserId},
             ],
         });
-      
-        console.log(messages)
 
         const chatPartnersIds = [
         ...new Set(messages.map((msg) => 
@@ -104,9 +115,9 @@ export const getChatPartners = async (req: AuthRequest, res: Response) => {
             : msg.senderId.toString() 
         ))
         ];
-        console.log(chatPartnersIds)
+
         const chatPartners = await User.find({_id: {$in:chatPartnersIds}}).select("-password")
-        console.log(chatPartners)
+
         res.status(200).json({success: true, data: chatPartners})
     }catch(error){
         console.log(`Error in getpartners chat ${error}`)
