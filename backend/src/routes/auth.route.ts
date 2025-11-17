@@ -2,8 +2,12 @@ import express from "express"
 import { loginHandler, logoutHandler, signUpHandler, updateProfile, isAuthenticated } from "../controller/auth.controller.js";
 import { protectRoute } from "../middleware/auth.middleware.js";
 import { upload } from "../middleware/multer.js";
+import { arcjetProtection } from "../middleware/arcjet.middleware.js";
+
 
 const router = express.Router();
+
+router.use(arcjetProtection)
 
 router.route("/login").post(loginHandler);
 router.route("/signup").post(signUpHandler);
