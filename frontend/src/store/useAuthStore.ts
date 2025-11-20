@@ -18,20 +18,29 @@ interface SignUpPayload{
     fullName: string,
     email: string,
     password: string
+};
+
+interface LoginPayload{
+    email: string,
+    password: string
 }
 
 interface AuthStore {
   authUser: User | null;
   isCheckingAuth: boolean;
   isSigningUp: boolean;
+  isLoggingIn: boolean;
   checkAuth: () => Promise<void>;
   signup: (data: SignUpPayload) => Promise<void>;
+  login: (data: LoginPayload) => Promise<void>;
+  logout: () => Promise<void>;
 }
 
 export const useAuthStore = create<AuthStore>((set) => ({
   authUser: null,
   isCheckingAuth: true,
   isSigningUp: false,
+  isLoggingIn: false,
 
   checkAuth: async () => {
     try {
@@ -54,7 +63,6 @@ export const useAuthStore = create<AuthStore>((set) => ({
          toast.success("Account created successfully");
       }
     } catch (error: any) {
-      console.log("Error is here")
       const message =
         error?.response?.data?.message ?? error?.message ?? "Signup failed";
       toast.error(message);
@@ -62,4 +70,33 @@ export const useAuthStore = create<AuthStore>((set) => ({
       set({ isSigningUp: false });
     }
   },
+
+  login: async (data: LoginPayload) => {
+    set({ isLoggingIn: true });
+    try {
+      const res = await axiosInstance.post<ApiResponse<User>>("/auth/login", data);
+      if (res.data.success && res.data.data){
+         set({ authUser: res.data.data });
+         toast.success("Logged In successfully");
+      }
+    } catch (error: any) {
+      const message =
+        error?.response?.data?.message ?? error?.message ?? "Login Failed";
+      toast.error(message);
+    } finally {
+      set({ isLoggingIn: false });
+    }
+  },
+
+  logout: async () => {
+    try{
+      const res = await axiosInstance.post("/auth/logout");
+      if (res.data.success){
+        set({authUser: null})
+        toast.success(res.data.message)
+      }
+    }catch(error: any){
+      toast.error("Something went wrong")
+    }
+  }
 }));
