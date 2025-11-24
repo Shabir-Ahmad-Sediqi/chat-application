@@ -8,22 +8,23 @@ const mouseClickSound = new Audio("/sounds/mouse-click.mp3");
 function ProfileHeader() {
     const {logout, authUser, updateProfile} = useAuthStore();
     const {isSoundEnabled, toggleSound} = useMessageStore();
-    const [selectedImage, setSelectedImage] = useState<string | ArrayBuffer | null>(null);
+    const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
     const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-    const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-      const file = e.target.files?.[0]
-      if(!file) return
+    const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+     const file = e.target.files?.[0];
+      if (!file) return;
 
-      const reader = new FileReader()
-      reader.readAsDataURL(file)
+      // Preview for UI only
+      const previewUrl = URL.createObjectURL(file);
+      setSelectedImage(previewUrl);
 
-      reader.onloadend = async () => {
-        const base64Image = reader.result
-        setSelectedImage(base64Image)
-      }
+      // Real file to upload
+      const formData = new FormData();
+      formData.append("profilePic", file);
 
+      await updateProfile(formData);   // <--- THIS IS WHAT BACKEND NEEDS
     }
   return (
     <div className="p-6 border-b  border-slate-700/50">
