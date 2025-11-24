@@ -136,15 +136,25 @@ export const updateProfile = async (
     try {
         const userId = req.user?._id;
         if (!userId) return res.status(401).json({ success: false, message: "Unauthorized" });
+        console.log("updateProfile called for user:", userId);
+        console.log("req.file present:", !!req.file);
 
         const file = req.file;
         if (!file) return res.status(400).json({ success: false, message: "No file uploaded" });
+        console.log("file.buffer length:", file.buffer?.length);
 
         const upload = await imagekit.upload({
             file: file.buffer.toString("base64"),
             fileName: `img-${Date.now()}`
         }); 
+        console.log("file.buffer length:", file.buffer?.length);
 
+
+        if (!upload || !upload.url) {
+        console.error("ImageKit returned unexpected response:", upload);
+        return res.status(502).json({ success: false, message: "ImageKit returned invalid response"});
+      }
+        console.log("ImageKit upload successful:", upload.url);
         const updatedUser = await User.findByIdAndUpdate(
             userId,
             { profilePic: upload.url },
@@ -163,9 +173,11 @@ export const updateProfile = async (
             }
         });
 
-    } catch (error: unknown) {
-        const message = error instanceof Error ? error.message : String(error);
-        res.status(500).json({ success: false, message });
+    } catch (error: any) {
+        console.error("Error in updateProfile:", error);
+        // Clear catch: check for .message or stringify object
+        const message = error?.message || JSON.stringify(error) || "Unknown server error";
+        res.status(500).json({ success: false,message:  message });
     }
 };
 
