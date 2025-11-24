@@ -4,9 +4,9 @@ import toast from "react-hot-toast";
 
 export interface User {
   _id: string;
-  name?: string;
+  fullName?: string;
   email?: string;
-  avatar?: string;
+  profilePic?: string;
 }
 
 export interface Message {

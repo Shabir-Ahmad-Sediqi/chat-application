@@ -11,13 +11,16 @@ import { Toaster } from "react-hot-toast"
 
 function App() {
 
-  const { checkAuth, authUser, isCheckingAuth } = useAuthStore() as any;
+  const { checkAuth, authUser, isCheckingAuth } = useAuthStore();
 
   useEffect(() => {
     checkAuth();
   }, [checkAuth]);
 
-  console.log(authUser)
+  setTimeout(() => {
+      console.log(authUser)
+  }, 4000);
+
 
   if (isCheckingAuth) return <PageLoader/>
 
