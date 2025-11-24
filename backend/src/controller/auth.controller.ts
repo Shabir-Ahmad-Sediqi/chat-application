@@ -140,12 +140,13 @@ export const updateProfile = async (
         console.log("req.file present:", !!req.file);
 
         const file = req.file;
+        console.log(file)
         if (!file) return res.status(400).json({ success: false, message: "No file uploaded" });
         console.log("file.buffer length:", file.buffer?.length);
 
         const upload = await imagekit.upload({
             file: file.buffer.toString("base64"),
-            fileName: `img-${Date.now()}`
+            fileName: file.originalname
         }); 
         console.log("file.buffer length:", file.buffer?.length);
 

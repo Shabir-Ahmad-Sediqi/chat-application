@@ -17,7 +17,7 @@ const buffer = fs.readFileSync("./download.jpeg");
 
 imagekit.upload({
   file: buffer.toString("base64"),
-  fileName: "test.jpg"
+  fileName: "download.jpeg"
 }, (err, result) => {
   if (err) {
     console.error("ImageKit error:", err);
