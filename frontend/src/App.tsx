@@ -17,9 +17,9 @@ function App() {
     checkAuth();
   }, [checkAuth]);
 
-  setTimeout(() => {
-      console.log(authUser)
-  }, 4000);
+  if (authUser === null){
+    console.log("auth user is null i dont know why ")
+  }
 
 
   if (isCheckingAuth) return <PageLoader/>

@@ -4,7 +4,7 @@ import toast from "react-hot-toast";
 
 interface ApiResponse<T>{
     success: boolean;
-    data?: T;
+    data: T;
     message?: string
 };
 interface User {
@@ -46,9 +46,18 @@ export const useAuthStore = create<AuthStore>((set) => ({
   checkAuth: async () => {
     try {
       const res = await axiosInstance.get<ApiResponse<User>>("/auth/check");
-      if (res.data.success && res.data.data) set({ authUser: res.data.data });
-    } catch (error) {
-      console.log(`Error in authCheck ${error}`);
+      console.log(`After sending request ${res}`)
+      if (res.data.success && res.data.data){
+        set({ authUser: res.data.data });
+        console.log("inside if it means it successed", res.data.data)
+      } 
+      console.log("After if statement")
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+      console.error("Error in authCheck:", error.message, error.stack);
+    } else {
+      console.error("Error in authCheck (non-error):", error);
+    }
       set({ authUser: null });
     } finally {
       set({ isCheckingAuth: false });
@@ -102,7 +111,7 @@ export const useAuthStore = create<AuthStore>((set) => ({
   },
   updateProfile: async (data) => {
     try{
-      const res = await axiosInstance.put("/auth/update-profile", data)
+      const res = await axiosInstance.put<ApiResponse<User>>("/auth/update-profile", data)
       if (res.data.success && res.data.data){
         set({authUser: res.data.data})
         toast.success("Profile Updated Successfully")

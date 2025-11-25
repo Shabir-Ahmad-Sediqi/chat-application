@@ -35,6 +35,7 @@ interface MessageStore{
     setSelectedUser: (user: User | null) => void,
     getAllContacts: () => Promise<void>,
     getChatPartners: () => Promise<void>,
+    getMessagesById: (userId: string) => Promise<void>
 
 }
 
@@ -87,4 +88,20 @@ export const useMessageStore = create<MessageStore>((set, get) => ({
             set({isUsersLoading: false})
         }
     },
+
+    getMessagesById: async (userId) => {
+        set({isMessagesLoading: true});
+        try{
+            const res = await axiosInstance.get(`/message/${userId}`)
+            if (res.data.success){
+                set({messages: res.data.data})
+            }
+        }catch(error: any){
+            const message =
+            error?.response?.data?.message ?? error?.message ?? "Fetching chatPartners Failed";
+            toast.error(message);
+        }finally{
+            set({isMessagesLoading: false})
+        }
+    }
 }));
