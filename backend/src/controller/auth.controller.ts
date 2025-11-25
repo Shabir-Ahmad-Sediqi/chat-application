@@ -201,6 +201,6 @@ export const isAuthenticated = async (req: AuthRequest, res: Response<ApiRespons
         });
     } catch (error: unknown) {
         const message = error instanceof Error ? error.message : String(error);
-        res.status(500).json({ success: false, message });
+        res.status(500).json({ success: false,message: message });
     }
 }
