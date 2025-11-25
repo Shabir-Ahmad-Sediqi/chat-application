@@ -34,7 +34,7 @@ interface AuthStore {
   signup: (data: SignUpPayload) => Promise<void>;
   login: (data: LoginPayload) => Promise<void>;
   logout: () => Promise<void>;
-  updateProfile: (data: FormData) => Promise<void>;
+  updateProfile: (data: any) => Promise<void>;
 }
 
 export const useAuthStore = create<AuthStore>((set) => ({
