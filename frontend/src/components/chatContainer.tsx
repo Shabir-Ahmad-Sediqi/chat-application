@@ -25,7 +25,7 @@ function ChatContainer() {
       <ChatHeader/>
       <div className="flex-1 px-6 overflow-y-auto py-8">
         {messages.length > 0 ? (
-          <div className="max-w-3xl mx-auto space-y-6">
+          <div className=" space-y-6"> // changed for sick of testing
             {messages.map((msg) => (
               <div
                key={msg._id}
