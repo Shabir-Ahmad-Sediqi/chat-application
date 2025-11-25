@@ -13,17 +13,17 @@ const imagekit = new ImageKit({
     urlEndpoint: requireEnv('IMAGEKIT_ENDPOINT_URL', process.env.IMAGEKIT_ENDPOINT_URL)
 });
 
-const buffer = fs.readFileSync("./download.jpeg");
+// const buffer = fs.readFileSync("./download.jpeg");
 
-imagekit.upload({
-  file: buffer.toString("base64"),
-  fileName: "download.jpeg"
-}, (err, result) => {
-  if (err) {
-    console.error("ImageKit error:", err);
-  } else {
-    console.log("Upload success:", result);
-  }
-});
+// imagekit.upload({
+//   file: buffer.toString("base64"),
+//   fileName: "download.jpeg"
+// }, (err, result) => {
+//   if (err) {
+//     console.error("ImageKit error:", err);
+//   } else {
+//     console.log("Upload success:", result);
+//   }
+// });
 
 export default imagekit
