@@ -136,23 +136,18 @@ export const updateProfile = async (
     try {
         const userId = req.user?._id;
         if (!userId) return res.status(401).json({ success: false, message: "Unauthorized" });
-        console.log("updateProfile called for user:", userId);
-        console.log("req.file present:", !!req.file);
 
         const file = req.file;
         console.log(file)
-        if (!file) return res.status(400).json({ success: false, message: "No file uploaded" });
-        console.log("file.buffer length:", file.buffer?.length);
+        if (!file) return res.status(400).json({ success: false, message: "No file uploaded" })
 
         const upload = await imagekit.upload({
-            file: file.buffer.toString("base64"),
+            file: file.buffer,
             fileName: file.originalname
         }); 
-        console.log("file.buffer length:", file.buffer?.length);
 
 
         if (!upload || !upload.url) {
-        console.error("ImageKit returned unexpected response:", upload);
         return res.status(502).json({ success: false, message: "ImageKit returned invalid response"});
       }
         console.log("ImageKit upload successful:", upload.url);
