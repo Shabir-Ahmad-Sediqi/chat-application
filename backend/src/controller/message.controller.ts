@@ -33,7 +33,7 @@ export const getMessagesById = async (req: AuthRequest, res: Response) => {
                 {senderId: myId, receiverId: userToChatId},
                 {senderId: userToChatId, receiverId: myId}
             ],
-        });
+        }).sort({createdAt: 1});
 
         res.status(200).json({success: true, data: messages})
     }catch(error){
@@ -68,8 +68,8 @@ export const sendMessage = async (req: AuthRequest, res: Response) => {
         if (file){
             // upload image to imageKit
             const uploaded = await imagekit.upload({
-                file: file.buffer.toString("base64"),
-                fileName: `img-${Date.now()}`
+                file: file.buffer,
+                fileName: file.originalname
             });
             imageUrl = uploaded.url;
         }
