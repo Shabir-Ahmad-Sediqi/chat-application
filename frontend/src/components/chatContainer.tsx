@@ -3,12 +3,14 @@ import { useAuthStore } from "../store/useAuthStore"
 import { useMessageStore } from "../store/useMessageStore"
 import ChatHeader from "./chatHeader";
 import NoChatHistoryPlaceholder from "./noChatHistoryPlaceholder";
+import MessageInput from "./messageInput";
+import MessageLoadingSkelaton from "./messageLoadingSkelaton";
 
 
 
 function ChatContainer() {
 
-  const {selectedUser, getMessagesById, messages} = useMessageStore();
+  const {selectedUser, getMessagesById, messages, isMessagesLoading} = useMessageStore();
   const authUser = useAuthStore(state => state.authUser);
 
   useEffect(() => {
@@ -24,7 +26,7 @@ function ChatContainer() {
     <>
       <ChatHeader/>
       <div className="flex-1 px-6 overflow-y-auto py-8">
-        {messages.length > 0 ? (
+        {messages.length > 0 && !isMessagesLoading ? (
           <div className=" space-y-6"> // changed for sick of testing
             {messages.map((msg) => (
               <div
@@ -42,14 +44,17 @@ function ChatContainer() {
                     )}
                     {msg.text && <p className="mt-2">{msg.text}</p>}
                     <p className="text-xs mt-1 opacity-75 flex items-center gap-1">
-                      {new Date(msg.createdAt).toISOString().slice(11,16)}
+                      {new Date(msg.createdAt).toLocaleDateString(undefined,
+                        {hour: "2-digit",
+                        minute: "2-digit"})}
                     </p>
                 </div>
               </div>
             ))}
           </div>
-        ) : (<NoChatHistoryPlaceholder name={selectedUser?.fullName}/>)}
+        ) : isMessagesLoading ? <MessageLoadingSkelaton/>: (<NoChatHistoryPlaceholder name={selectedUser?.fullName}/>)}
       </div>
+      <MessageInput/>
     </>
   )
 }

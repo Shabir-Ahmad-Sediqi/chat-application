@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { axiosInstance } from "../libs/axios";
 import toast from "react-hot-toast";
+import { useAuthStore } from "./useAuthStore";
 
 export interface User {
   _id: string;
@@ -35,7 +36,8 @@ interface MessageStore{
     setSelectedUser: (user: User | null) => void,
     getAllContacts: () => Promise<void>,
     getChatPartners: () => Promise<void>,
-    getMessagesById: (userId: string) => Promise<void>
+    getMessagesById: (userId: string) => Promise<void>,
+    sendMessage: (messageData: FormData) => Promise<void>
 
 }
 
@@ -102,6 +104,41 @@ export const useMessageStore = create<MessageStore>((set, get) => ({
             toast.error(message);
         }finally{
             set({isMessagesLoading: false})
+        }
+    },
+
+    sendMessage: async (messageData) => {
+        const {selectedUser, messages} = get()
+        const {authUser} = useAuthStore.getState()
+
+        const tempId = `temp-${Date.now()}`
+        const message =  messageData.get("text")
+        let imageEntry = messageData.get("image")
+        if (imageEntry instanceof File){
+            imageEntry = URL.createObjectURL(imageEntry)
+        }
+
+        const optimisticMessage:Message = {
+            _id: tempId,
+            senderId: authUser?._id!,
+            receiverId: selectedUser?._id!,
+            text:message && typeof message === "string" ? message : undefined,
+            image: imageEntry && typeof imageEntry === "string" ? imageEntry : undefined,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+            // isOptimistic: true, // Optional
+        }
+        set({messages: [ ...messages, optimisticMessage ]})
+        try{
+            const res = await axiosInstance.post(`/message/send/${selectedUser?._id}`,messageData)
+            if (res.data.success & res.data.data){
+                set({messages: messages.concat(res.data.data)})
+            }
+        }catch(error: any){
+            set({messages: messages})
+            const message =
+            error?.response?.data?.message ?? error?.message ?? "Sending Messages Failed";
+            toast.error(message);
         }
     }
 }));
