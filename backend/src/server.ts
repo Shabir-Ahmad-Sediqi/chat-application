@@ -7,10 +7,10 @@ import path from "path"
 import { connectDB } from "./lib/db.js"
 import cookieParser from "cookie-parser"
 import cors from "cors"
+import { app, server } from "./lib/socket.io.js"
 
 dotenv.config()
 
-const app = express();
 const __dirname = path.resolve();
 
 //Middlewares
@@ -37,7 +37,7 @@ app.get("/", (req: Request, res: Response) => {
 })
 
 const PORT = process.env.PORT || 3000
-app.listen(PORT, () => {
+server.listen(PORT, () => {
     console.log(`Server is litsening on port http://localhost:${PORT}`)
     connectDB()
 })

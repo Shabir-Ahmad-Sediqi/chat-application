@@ -12,7 +12,7 @@ interface ApiResponse<T>{
     data?: T;
     message?: string
 };
-interface PublicUserResponse {
+export interface PublicUserResponse {
   _id: string;
   fullName: string;
   email: string;
