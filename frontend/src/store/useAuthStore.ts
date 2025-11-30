@@ -1,6 +1,9 @@
 import { create } from "zustand";
 import { axiosInstance } from "../libs/axios";
 import toast from "react-hot-toast";
+import { io, Socket } from "socket.io-client";
+
+const BASE_URL = import.meta.env.MODE === "development" ? "http://localhost:3000" : "/";
 
 interface ApiResponse<T>{
     success: boolean;
@@ -30,18 +33,24 @@ interface AuthStore {
   isCheckingAuth: boolean;
   isSigningUp: boolean;
   isLoggingIn: boolean;
+  socket: Socket | null
+  onlineUsers: string[]
   checkAuth: () => Promise<void>;
   signup: (data: SignUpPayload) => Promise<void>;
   login: (data: LoginPayload) => Promise<void>;
   logout: () => Promise<void>;
   updateProfile: (data: any) => Promise<void>;
+  connecSocket: () => void;
+  disconnnectSocket: () => void;
 }
 
-export const useAuthStore = create<AuthStore>((set) => ({
+export const useAuthStore = create<AuthStore>((set,get) => ({
   authUser: null,
   isCheckingAuth: true,
   isSigningUp: false,
   isLoggingIn: false,
+  socket: null,
+  onlineUsers: [],
 
   checkAuth: async () => {
     try {
@@ -49,6 +58,7 @@ export const useAuthStore = create<AuthStore>((set) => ({
       console.log(`After sending request ${res}`)
       if (res.data.success && res.data.data){
         set({ authUser: res.data.data });
+        get().connecSocket();
         console.log("inside if it means it successed", res.data.data)
       } 
       console.log("After if statement")
@@ -88,6 +98,8 @@ export const useAuthStore = create<AuthStore>((set) => ({
       if (res.data.success && res.data.data){
          set({ authUser: res.data.data });
          toast.success("Logged In successfully");
+
+         get().connecSocket();
       }
     } catch (error: any) {
       const message =
@@ -104,11 +116,13 @@ export const useAuthStore = create<AuthStore>((set) => ({
       if (res.data.success){
         set({authUser: null})
         toast.success(res.data.message)
+        get().disconnnectSocket()
       }
     }catch(error: any){
       toast.error("Something went wrong")
     }
   },
+
   updateProfile: async (data) => {
     try{
       const res = await axiosInstance.put<ApiResponse<User>>("/auth/update-profile", data)
@@ -121,6 +135,31 @@ export const useAuthStore = create<AuthStore>((set) => ({
       const message =
         error?.response?.data?.message ?? error?.message ?? "Error in Update Profile";
       toast.error(message)
+    }
+  },
+
+  connecSocket: () => {
+    const {authUser} = get();
+    if (!authUser || get().socket?.connected) return
+
+    const socket = io(BASE_URL, {
+      withCredentials: true // This ensures cookies are sent with the connection 
+    });
+
+    socket.connect();
+    set({socket});
+
+    // Litsen for online users events
+    socket.on("getOnlineUsers", (userIds) => {
+      set({onlineUsers: userIds})
+    })
+  },
+
+  disconnnectSocket: () => {
+    const {socket} = get()
+    if (socket?.connected) {
+      socket.disconnect();
+      set({socket: null})
     }
   }
 }));

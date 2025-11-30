@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useAuthStore } from "../store/useAuthStore"
 import { useMessageStore } from "../store/useMessageStore"
 import ChatHeader from "./chatHeader";
@@ -12,6 +12,7 @@ function ChatContainer() {
 
   const {selectedUser, getMessagesById, messages, isMessagesLoading} = useMessageStore();
   const authUser = useAuthStore(state => state.authUser);
+  const scrolRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     if (typeof selectedUser?._id !== "string"){
@@ -21,6 +22,12 @@ function ChatContainer() {
     getMessagesById(selectedUser?._id);
   
   },[selectedUser?._id, getMessagesById])
+
+  useEffect(() => {
+    if (scrolRef.current){
+      scrolRef.current.scrollIntoView({behavior: "smooth"})
+    }
+  }, [messages])
 
   return (
     <>
@@ -51,6 +58,7 @@ function ChatContainer() {
                 </div>
               </div>
             ))}
+            <div ref={scrolRef}/>
           </div>
         ) : isMessagesLoading ? <MessageLoadingSkelaton/>: (<NoChatHistoryPlaceholder name={selectedUser?.fullName}/>)}
       </div>
