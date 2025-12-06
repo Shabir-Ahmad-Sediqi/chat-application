@@ -19,6 +19,11 @@ const io = new Server(server, {
 
 io.use(socketAuthMiddleware)
 
+// this is for checking if a user is online
+export const getReceiverSocketId = (userId: string) => {
+    return userSocketMap[userId]
+}
+
 // this is for storing online users
 
 const userSocketMap: Record<string, string> = {}; // {userid: socketid}
