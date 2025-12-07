@@ -7,8 +7,13 @@ import MessageInput from "./messageInput";
 import MessageLoadingSkelaton from "./messageLoadingSkelaton";
 
 function ChatContainer() {
-  const { selectedUser, getMessagesById, messages, isMessagesLoading } =
-    useMessageStore();
+  const { 
+    selectedUser,
+    getMessagesById,
+    messages,
+    isMessagesLoading,
+    subscribeToMessage,
+    unSubscribeFromMessage } = useMessageStore();
   const authUser = useAuthStore((state) => state.authUser);
 
   // use a div ref for scroll target
@@ -20,8 +25,13 @@ function ChatContainer() {
       return;
     }
     getMessagesById(selectedUser?._id);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedUser?._id, getMessagesById]);
+    subscribeToMessage()
+
+    // clean up
+
+    return () => unSubscribeFromMessage()
+    
+  }, [selectedUser?._id, getMessagesById, subscribeToMessage, unSubscribeFromMessage]);
 
   useEffect(() => {
     if (scrolRef.current) {

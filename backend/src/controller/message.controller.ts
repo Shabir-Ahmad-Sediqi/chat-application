@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import Message from "../models/message.js";
 import User from "../models/User.js";
 import imagekit from "../lib/imageKit.js";
+import { getReceiverSocketId, io } from "../lib/socket.io.js";
 
 interface AuthRequest extends Request {
     user?: { _id: string };
@@ -85,6 +86,10 @@ export const sendMessage = async (req: AuthRequest, res: Response) => {
         await newMessage.save()
 
         // todo: later will implement socket.io to send real time messsages
+        const receiverSocketiD = getReceiverSocketId(receiverId)
+        if (receiverSocketiD){
+            io.to(receiverSocketiD).emit("newMessage", newMessage)
+        }
 
         res.status(201).json({ success: true, data: newMessage });
     }catch(error){
