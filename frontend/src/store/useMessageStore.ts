@@ -152,7 +152,7 @@ export const useMessageStore = create<MessageStore>((set, get) => ({
         const socket = useAuthStore.getState().socket;
 
         socket?.on("newMessage", (newMessage) => {
-            const isMessageSentFromSelectedUser = newMessage._id === selectedUser._id
+            const isMessageSentFromSelectedUser = newMessage.senderId === selectedUser._id
             if (!isMessageSentFromSelectedUser) return 
 
             const currentMessages = get().messages;
