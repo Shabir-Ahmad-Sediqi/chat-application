@@ -6,6 +6,7 @@ import { generateToken } from "../lib/utils.js";
 import { sendWelcomeEmail } from "../emails/emailHandler.js";
 import "dotenv/config"
 import imagekit from "../lib/imageKit.js";
+import Message from "../models/message.js";
 
 interface ApiResponse<T>{
     success: boolean;
@@ -198,4 +199,42 @@ export const isAuthenticated = async (req: AuthRequest, res: Response<ApiRespons
         const message = error instanceof Error ? error.message : String(error);
         res.status(500).json({ success: false,message: message });
     }
+}
+
+export const deleteAccount = async (req: AuthRequest, res: Response) => {
+    const userId = req.user?._id
+    const { password } = req.body 
+
+    try{
+        if (!userId) return res.status(401).json({success: false, message: "Unauthorized"})
+        // find the user in the db
+        const user = await User.findById(userId)
+        if (!user)return res.status(404).json({success: false, message: "User not found"})
+        // check if password is not null
+        if (!password) return res.status(401).json({success: false, message: "Password is required"})
+        // compare password with hashed password
+        const comparePassword = await bcrypt.compare(password, user.password)
+        if (!comparePassword) return res.status(401).json({success: false, message: "Invalid Credentials"})
+
+        const deletedAt = new Date()
+        user.email = `${deletedAt}${user.fullName}@gmail.com`
+        user.fullName = "Deleted User"
+        await user.save()
+
+        // Anonomize his messages
+
+        await Message.updateMany({senderId: userId},{
+            $set: {senderDeleted: true}
+        })
+
+        // todo Delete the user from contacts list and chat history
+        
+        res.status(200).json({success: true, message: "User Deleted Successfully"})
+
+
+    }catch(error: any){
+        console.log("Error in delete endpoint catch block ")
+        return res.status(500).json({success: false, message: "Internal server error", error})
+    }
+
 }
