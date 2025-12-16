@@ -222,13 +222,8 @@ export const deleteAccount = async (req: AuthRequest, res: Response) => {
         await user.save()
 
         // Anonomize his messages
-
-        await Message.updateMany({senderId: userId},{
-            $set: {senderDeleted: true}
-        })
-
         // todo Delete the user from contacts list and chat history
-        
+     
         res.status(200).json({success: true, message: "User Deleted Successfully"})
 
 
