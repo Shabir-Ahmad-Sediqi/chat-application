@@ -42,6 +42,7 @@ interface AuthStore {
   updateProfile: (data: any) => Promise<void>;
   connecSocket: () => void;
   disconnnectSocket: () => void;
+  deleteAccount: () => Promise<void>
 }
 
 export const useAuthStore = create<AuthStore>((set,get) => ({
@@ -161,5 +162,19 @@ export const useAuthStore = create<AuthStore>((set,get) => ({
       socket.disconnect();
       set({socket: null})
     }
+  },
+  deleteAccount: async () => {
+    try{
+      const res = await axiosInstance.post("/auth/delete-account");
+      if (res.data.status && res.data.message){
+        set({authUser: null})
+        toast.success("User Deleted Successfully")
+    }
+    }catch(error: any){
+      const message =
+      error?.response?.data?.message ?? error?.message ?? "Error in Delete Account";
+      toast.error(message)
+    }
+    }
   }
-}));
+));

@@ -6,7 +6,7 @@ import { useMessageStore } from "../store/useMessageStore";
 const mouseClickSound = new Audio("/sounds/mouse-click.mp3");
 
 function ProfileHeader() {
-    const {logout, authUser, updateProfile} = useAuthStore();
+    const {logout, authUser, updateProfile, deleteAccount} = useAuthStore();
     const {isSoundEnabled, toggleSound} = useMessageStore();
     const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
@@ -66,6 +66,12 @@ function ProfileHeader() {
             {/* buttons */}
 
              <div className="flex gap-4 items-center">
+              {/* Delete account */}
+              <button
+               className="text-slate-400 hover:text-slate-200 transition-colors"
+               onClick={deleteAccount}>
+                Delete Account
+              </button>
               {/* LOGOUT BTN */}
               <button
                 className="text-slate-400 hover:text-slate-200 transition-colors"
