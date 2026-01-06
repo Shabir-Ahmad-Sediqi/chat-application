@@ -16,6 +16,8 @@ function App() {
   const location = useLocation();
   const isAuthRoute = location.pathname === "/login" || location.pathname === "/signup";
   const isChatRoute = location.pathname === "/";
+  const fromLocation = (location.state as { from?: { pathname: string; search?: string } } | null)?.from;
+  const redirectTarget = fromLocation ? `${fromLocation.pathname}${fromLocation.search ?? ""}` : "/";
   const wrapperClass = isAuthRoute
     ? "min-h-screen flex items-center justify-center p-4"
     : isChatRoute
@@ -41,10 +43,22 @@ function App() {
     <div className="min-h-screen bg-slate-900 relative overflow-x-hidden">
       <div className={wrapperClass}>
         <Routes>
-          <Route path="/" element={authUser ? <ChatPage /> : <Navigate to={"/login"} />} />
-          <Route path="/settings" element={authUser ? <SettingsPage /> : <Navigate to={"/login"} />} />
-          <Route path="/login" element={!authUser ? <LoginPage /> : <Navigate to={"/"} />} />
-          <Route path="/signup" element={!authUser ? <SignUpPage /> : <Navigate to={"/"} />} />
+          <Route
+            path="/"
+            element={authUser ? <ChatPage /> : <Navigate to="/login" state={{ from: location }} replace />}
+          />
+          <Route
+            path="/settings"
+            element={authUser ? <SettingsPage /> : <Navigate to="/login" state={{ from: location }} replace />}
+          />
+          <Route
+            path="/login"
+            element={!authUser ? <LoginPage /> : <Navigate to={redirectTarget} replace />}
+          />
+          <Route
+            path="/signup"
+            element={!authUser ? <SignUpPage /> : <Navigate to={redirectTarget} replace />}
+          />
         </Routes>
       </div>
 

@@ -53,6 +53,7 @@ interface MessageStore{
     isUsersLoading: boolean,
     isMessagesLoading: boolean,
     isSoundEnabled: boolean,
+    lastMessageAtByUser: Record<string, string>,
 
     // functions
     toggleSound: () => void,
@@ -68,7 +69,8 @@ interface MessageStore{
     hideChat: (userId: string) => Promise<void>,
     getAllContacts: () => Promise<void>,
     getChatPartners: () => Promise<void>,
-    getMessagesById: (userId: string) => Promise<void>,
+    getMessagesById: (userId: string, since?: string) => Promise<void>,
+    syncSelectedMessages: () => Promise<void>,
     sendMessage: (messageData: FormData) => Promise<void>,
     subscribeToMessage: () => void,
     unSubscribeFromMessage: () => void,
@@ -92,6 +94,7 @@ export const useMessageStore = create<MessageStore>((set, get) => ({
     isUsersLoading: false,
     isMessagesLoading: false,
     isSoundEnabled: localStorage.getItem("isSoundEnabled") === "true",
+    lastMessageAtByUser: {},
 
     toggleSound: () => {
         localStorage.setItem("isSoundEnabled", String(!get().isSoundEnabled));
@@ -283,12 +286,24 @@ export const useMessageStore = create<MessageStore>((set, get) => ({
         }
     },
 
-    getMessagesById: async (userId) => {
+    getMessagesById: async (userId, since) => {
         set({isMessagesLoading: true});
         try{
-            const res = await axiosInstance.get(`/message/${userId}`)
+            const query = since ? `?since=${encodeURIComponent(since)}` : "";
+            const res = await axiosInstance.get(`/message/${userId}${query}`)
             if (res.data.success){
-                set({messages: res.data.data})
+                const fetched = res.data.data || [];
+                const nextMessages = since ? get().messages.concat(fetched) : fetched;
+                set({messages: nextMessages})
+                const lastMessage = nextMessages[nextMessages.length - 1];
+                if (lastMessage?.createdAt) {
+                    set({
+                        lastMessageAtByUser: {
+                            ...get().lastMessageAtByUser,
+                            [userId]: lastMessage.createdAt
+                        }
+                    });
+                }
             }
         }catch(error: any){
             const message =
@@ -297,6 +312,12 @@ export const useMessageStore = create<MessageStore>((set, get) => ({
         }finally{
             set({isMessagesLoading: false})
         }
+    },
+    syncSelectedMessages: async () => {
+        const { selectedUser, lastMessageAtByUser } = get();
+        if (!selectedUser?._id) return;
+        const since = lastMessageAtByUser[selectedUser._id];
+        await get().getMessagesById(selectedUser._id, since);
     },
 
     sendMessage: async (messageData) => {
@@ -335,6 +356,12 @@ export const useMessageStore = create<MessageStore>((set, get) => ({
             // isOptimistic: true, // Optional
         }
         set({messages: [ ...messages, optimisticMessage ]})
+        set({
+            lastMessageAtByUser: {
+                ...get().lastMessageAtByUser,
+                [selectedUser._id]: optimisticMessage.createdAt
+            }
+        })
         try{
             const res = await axiosInstance.post(`/message/send/${selectedUser?._id}`,messageData)
             if (res.data.success & res.data.data){
@@ -349,17 +376,28 @@ export const useMessageStore = create<MessageStore>((set, get) => ({
     },
 
     subscribeToMessage: () => {
-        const {selectedUser, isSoundEnabled} = get()
-        if (!selectedUser) return
-
         const socket = useAuthStore.getState().socket;
 
         socket?.on("newMessage", (newMessage) => {
-            const isMessageSentFromSelectedUser = newMessage.senderId === selectedUser._id
-            if (!isMessageSentFromSelectedUser) return 
+            const { selectedUser, isSoundEnabled, chats } = get();
+            const isMessageSentFromSelectedUser = selectedUser?._id === newMessage.senderId;
+            const senderId = newMessage.senderId;
 
-            const currentMessages = get().messages;
-            set({messages: [...currentMessages, newMessage]})
+            if (isMessageSentFromSelectedUser) {
+                const currentMessages = get().messages;
+                set({messages: [...currentMessages, newMessage]})
+            } else if (senderId && !chats.find((chat) => chat._id === senderId)) {
+                set({ chats: [ { _id: senderId, fullName: "New message" }, ...chats ] as User[] })
+            }
+
+            if (senderId && newMessage.createdAt) {
+                set({
+                    lastMessageAtByUser: {
+                        ...get().lastMessageAtByUser,
+                        [senderId]: newMessage.createdAt
+                    }
+                })
+            }
 
             if (isSoundEnabled){
                 const notificationSound = new Audio("/sounds/notification.mp3")

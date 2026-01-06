@@ -17,7 +17,9 @@ function ChatPage() {
     setSelectedUser,
     fetchBlockedUsers,
     handleUserBlocked,
-    handleUserUnblocked
+    handleUserUnblocked,
+    subscribeToMessage,
+    unSubscribeFromMessage
   } = useMessageStore();
   const { socket } = useAuthStore();
 
@@ -63,6 +65,14 @@ function ChatPage() {
   useEffect(() => {
     fetchBlockedUsers();
   }, [fetchBlockedUsers]);
+
+  useEffect(() => {
+    if (!socket) return;
+    subscribeToMessage();
+    return () => {
+      unSubscribeFromMessage();
+    };
+  }, [socket, subscribeToMessage, unSubscribeFromMessage]);
 
   return (
     <div className="relative w-full h-screen max-h-screen">

@@ -4,7 +4,7 @@ import HiddenChat from "../models/HiddenChat.js";
 import UserBlock from "../models/UserBlock.js";
 import User from "../models/User.js";
 import imagekit from "../lib/imageKit.js";
-import { getReceiverSocketId, io } from "../lib/socket.io.js";
+import { getReceiverSocketIds, io } from "../lib/socket.io.js";
 
 interface AuthRequest extends Request {
     user?: { _id: string };
@@ -31,13 +31,21 @@ export const getMessagesById = async (req: AuthRequest, res: Response) => {
     try{
         const myId = req.user?._id
         const { id: userToChatId } = req.params;
+        const { since } = req.query;
 
-        const messages = await Message.find({
+        const sinceDate = since ? new Date(String(since)) : null;
+
+        const query: any = {
             $or: [
                 {senderId: myId, receiverId: userToChatId},
                 {senderId: userToChatId, receiverId: myId}
             ],
-        }).sort({createdAt: 1});
+        };
+        if (sinceDate && !Number.isNaN(sinceDate.getTime())) {
+            query.createdAt = { $gt: sinceDate };
+        }
+
+        const messages = await Message.find(query).sort({createdAt: 1});
 
         res.status(200).json({success: true, data: messages})
     }catch(error){
@@ -119,10 +127,10 @@ export const sendMessage = async (req: AuthRequest, res: Response) => {
         await HiddenChat.deleteOne({ ownerId: receiverId, otherUserId: senderId });
 
         // todo: later will implement socket.io to send real time messsages
-        const receiverSocketiD = getReceiverSocketId(receiverId)
-        if (receiverSocketiD){
-            io.to(receiverSocketiD).emit("newMessage", newMessage)
-        }
+        const receiverSocketIds = getReceiverSocketIds(receiverId)
+        receiverSocketIds.forEach((socketId) => {
+            io.to(socketId).emit("newMessage", newMessage)
+        })
 
         res.status(201).json({ success: true, data: newMessage });
     }catch(error){

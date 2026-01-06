@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import User from "../models/User.js";
 import UserBlock from "../models/UserBlock.js";
-import { getReceiverSocketId, io } from "../lib/socket.io.js";
+import { getReceiverSocketIds, io } from "../lib/socket.io.js";
 
 interface ApiResponse<T> {
   success: boolean;
@@ -51,10 +51,10 @@ export const blockUser = async (req: Request, res: Response<ApiResponse<null>>) 
       { upsert: true }
     );
 
-    const receiverSocketId = getReceiverSocketId(blockedId);
-    if (receiverSocketId) {
-      io.to(receiverSocketId).emit("userBlocked", { userId: blockerId.toString() });
-    }
+    const receiverSocketIds = getReceiverSocketIds(blockedId);
+    receiverSocketIds.forEach((socketId) => {
+      io.to(socketId).emit("userBlocked", { userId: blockerId.toString() });
+    });
 
     res.status(200).json({ success: true });
   } catch (error: any) {
@@ -71,10 +71,10 @@ export const unblockUser = async (req: Request, res: Response<ApiResponse<null>>
 
     await UserBlock.deleteOne({ blockerId, blockedId });
 
-    const receiverSocketId = getReceiverSocketId(blockedId);
-    if (receiverSocketId) {
-      io.to(receiverSocketId).emit("userUnblocked", { userId: blockerId.toString() });
-    }
+    const receiverSocketIds = getReceiverSocketIds(blockedId);
+    receiverSocketIds.forEach((socketId) => {
+      io.to(socketId).emit("userUnblocked", { userId: blockerId.toString() });
+    });
 
     res.status(200).json({ success: true });
   } catch (error: any) {

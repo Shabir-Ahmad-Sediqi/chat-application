@@ -12,8 +12,6 @@ function ChatContainer() {
     getMessagesById,
     messages,
     isMessagesLoading,
-    subscribeToMessage,
-    unSubscribeFromMessage,
     isSelectedUserDeleted,
     isSelectedUserBlocked,
     isSelectedUserBlockingMe } = useMessageStore();
@@ -39,13 +37,7 @@ function ChatContainer() {
       return;
     }
     getMessagesById(selectedUser?._id);
-    subscribeToMessage()
-
-    // clean up
-
-    return () => unSubscribeFromMessage()
-    
-  }, [selectedUser?._id, getMessagesById, subscribeToMessage, unSubscribeFromMessage]);
+  }, [selectedUser?._id, getMessagesById]);
 
   useEffect(() => {
     if (scrolRef.current) {
@@ -75,7 +67,7 @@ function ChatContainer() {
       )}
 
       {/* messages area */}
-      <div className="flex-1 px-4 md:px-6 overflow-y-auto py-6 md:py-8 min-h-0">
+      <div className="flex-1 px-4 md:px-6 overflow-y-auto py-6 md:py-8 min-h-0 pb-28 md:pb-8">
         {messages.length > 0 && !isMessagesLoading ? (
           <div className="space-y-6">
             {messages.map((msg) => (
@@ -156,8 +148,8 @@ function ChatContainer() {
       </div>
 
       {/* Input area - keep fixed at bottom, safe-area aware */}
-      <div className="sticky bottom-0 bg-gradient-to-t from-slate-900/60 to-transparent pt-2 pb-safe md:pb-4">
-        <div className="px-4 md:px-6">
+      <div className="fixed md:sticky bottom-0 left-0 right-0 bg-gradient-to-t from-slate-900/60 to-transparent pt-2 pb-safe md:pb-4">
+        <div className="px-4 md:px-6 max-w-5xl mx-auto">
           <MessageInput />
         </div>
       </div>

@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { axiosInstance } from "../libs/axios";
 import toast from "react-hot-toast";
 import { io, Socket } from "socket.io-client";
+import { useMessageStore } from "./useMessageStore";
 
 const BASE_URL = import.meta.env.MODE === "development" ? "http://localhost:3000" : "/";
 
@@ -250,6 +251,23 @@ export const useAuthStore = create<AuthStore>((set,get) => ({
     socket.on("getOnlineUsers", (userIds) => {
       set({onlineUsers: userIds})
     })
+    socket.on("presence:online", ({ userId }) => {
+      if (!userId) return;
+      const current = get().onlineUsers;
+      if (!current.includes(userId)) {
+        set({ onlineUsers: current.concat(userId) });
+      }
+    });
+    socket.on("presence:offline", ({ userId }) => {
+      if (!userId) return;
+      set({ onlineUsers: get().onlineUsers.filter((id) => id !== userId) });
+    });
+    socket.on("connect", () => {
+      const messageStore = useMessageStore.getState() as {
+        syncSelectedMessages?: () => Promise<void>;
+      };
+      messageStore.syncSelectedMessages?.();
+    });
   },
 
   disconnnectSocket: () => {
