@@ -315,7 +315,7 @@ export const useMessageStore = create<MessageStore>((set, get) => ({
         const message = messageData.get("text")
         const files = messageData.getAll("attachments") as File[];
         const attachments = files.map((file) => ({
-            type: file.type.startsWith("image/") ? "image" : "file",
+            type: (file.type.startsWith("image/") ? "image" : "file") as "image" | "file",
             url: URL.createObjectURL(file),
             fileName: file.name,
             fileSize: file.size,
