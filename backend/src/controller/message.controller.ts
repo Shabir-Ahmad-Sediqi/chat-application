@@ -96,12 +96,27 @@ export const sendMessage = async (req: AuthRequest, res: Response) => {
         const attachments = [];
         for (const file of files) {
             if (file.size > 5 * 1024 * 1024) {
-                return res.status(400).json({ message: "File exceeds 5MB limit." });
+                return res.status(400).json({
+                    success: false,
+                    error: { code: "FILE_TOO_LARGE", message: "File exceeds 5MB limit." }
+                });
             }
-            const uploaded = await imagekit.upload({
-                file: file.buffer,
-                fileName: file.originalname
-            });
+            let uploaded;
+            try {
+                uploaded = await imagekit.upload({
+                    file: file.buffer,
+                    fileName: file.originalname
+                });
+            } catch (uploadError: any) {
+                const uploadMessage = uploadError?.message || "Upload failed";
+                return res.status(502).json({
+                    success: false,
+                    error: {
+                        code: "UPLOAD_FAILED",
+                        message: `Failed to upload ${file.originalname}: ${uploadMessage}`
+                    }
+                });
+            }
             attachments.push({
                 type: file.mimetype.startsWith("image/") ? "image" : "file",
                 url: uploaded.url,
@@ -126,16 +141,19 @@ export const sendMessage = async (req: AuthRequest, res: Response) => {
 
         await HiddenChat.deleteOne({ ownerId: receiverId, otherUserId: senderId });
 
-        // todo: later will implement socket.io to send real time messsages
         const receiverSocketIds = getReceiverSocketIds(receiverId)
         receiverSocketIds.forEach((socketId) => {
             io.to(socketId).emit("newMessage", newMessage)
         })
 
         res.status(201).json({ success: true, data: newMessage });
-    }catch(error){
-        console.log(`Error in sendMessage controller ${error}`);
-        res.status(500).json({ success: false, message: `Internal server error ${error}` });
+    }catch(error: any){
+        const message = error?.message || JSON.stringify(error) || "Unknown server error";
+        console.log("Error in sendMessage controller", message);
+        res.status(500).json({
+            success: false,
+            error: { code: "INTERNAL_ERROR", message }
+        });
     }
 };
 
