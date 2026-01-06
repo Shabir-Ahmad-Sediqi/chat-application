@@ -1,12 +1,24 @@
-import React,{ useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import BorderAnimatedContainer from '../components/borderAnimatedContainer'
 import { MessageCircleIcon, LockIcon, MailIcon, UserIcon, LoaderIcon } from "lucide-react";
 import { Link } from 'react-router';
 import { useAuthStore } from '../store/useAuthStore';
 
 function SignUpPage() {
-  const {isSigningUp, signup} = useAuthStore()
+  const {isSigningUp, signup, authError, clearAuthError} = useAuthStore()
   const [formData, setFormData] = useState({fullName: "", email: "", password: ""})
+  const [shakeCard, setShakeCard] = useState(false);
+
+  useEffect(() => {
+    clearAuthError();
+  }, [clearAuthError]);
+
+  useEffect(() => {
+    if (!authError) return;
+    setShakeCard(true);
+    const timer = setTimeout(() => setShakeCard(false), 500);
+    return () => clearTimeout(timer);
+  }, [authError]);
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -15,15 +27,15 @@ function SignUpPage() {
 
    return (
     <div className="w-full flex items-center justify-center p-4 bg-slate-900">
-      <div className="relative w-full max-w-6xl md:h-[800px] h-[650px] scale-[0.95]">
+      <div className="relative w-full max-w-6xl md:h-[800px] h-[650px] scale-[0.95] motion-scale-in">
         <BorderAnimatedContainer>
-          <div className="w-full flex flex-col md:flex-row">
+          <div className={`w-full flex flex-col md:flex-row ${shakeCard ? "motion-shake" : ""}`}>
             {/* FORM CLOUMN - LEFT SIDE */}
             <div className="md:w-1/2 p-8 flex items-center justify-center md:border-r border-slate-600/30">
               <div className="w-full max-w-md">
                 {/* HEADING TEXT */}
-                <div className="text-center mb-8">
-                  <MessageCircleIcon className="w-12 h-12 mx-auto text-slate-400 mb-4" />
+                <div className="text-center mb-8 motion-fade-up">
+                  <MessageCircleIcon className="w-12 h-12 mx-auto text-slate-400 mb-4 motion-fade-up motion-stagger-1" />
                   <h2 className="text-2xl font-bold text-slate-200 mb-2">Create Account</h2>
                   <p className="text-slate-400">Sign up for a new account</p>
                 </div>
@@ -31,7 +43,7 @@ function SignUpPage() {
                 {/* FORM */}
                 <form onSubmit={handleSubmit} className="space-y-6">
                   {/* FULL NAME */}
-                  <div>
+                  <div className="motion-fade-up motion-stagger-2">
                     <label className="auth-input-label">Full Name</label>
                     <div className="relative">
                       <UserIcon className="auth-input-icon" />
@@ -42,12 +54,13 @@ function SignUpPage() {
                         onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
                         className="input"
                         placeholder="Your Name"
+                        disabled={isSigningUp}
                       />
                     </div>
                   </div>
 
                   {/* EMAIL INPUT */}
-                  <div>
+                  <div className="motion-fade-up motion-stagger-3">
                     <label className="auth-input-label">Email</label>
                     <div className="relative">
                       <MailIcon className="auth-input-icon" />
@@ -58,12 +71,13 @@ function SignUpPage() {
                         onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                         className="input"
                         placeholder="youremail@gmail.com"
+                        disabled={isSigningUp}
                       />
                     </div>
                   </div>
 
                   {/* PASSWORD INPUT */}
-                  <div>
+                  <div className="motion-fade-up motion-stagger-4">
                     <label className="auth-input-label">Password</label>
                     <div className="relative">
                       <LockIcon className="auth-input-icon" />
@@ -74,19 +88,29 @@ function SignUpPage() {
                         onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                         className="input"
                         placeholder="Enter your password"
+                        disabled={isSigningUp}
                       />
                     </div>
                   </div>
 
                   {/* SUBMIT BUTTON */}
-                  <button className="auth-btn" type="submit" disabled={isSigningUp}>
+                  <button className="auth-btn motion-fade-up motion-stagger-5" type="submit" disabled={isSigningUp}>
                     {isSigningUp ? (
-                      <LoaderIcon className="w-full h-5 animate-spin text-center" />
+                      <span className="flex items-center justify-center gap-2">
+                        <LoaderIcon className="w-5 h-5 animate-spin" />
+                        Creating account...
+                      </span>
                     ) : (
                       "Create Account"
                     )}
                   </button>
                 </form>
+
+                {authError && (
+                  <p className="mt-4 text-sm text-red-500 text-center" role="alert">
+                    {authError}
+                  </p>
+                )}
 
                 <div className="mt-6 text-center">
                   <Link to="/login" className="auth-link">

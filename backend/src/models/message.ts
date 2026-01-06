@@ -6,6 +6,13 @@ export interface IMessage extends Document {
   receiverId: mongoose.Types.ObjectId;
   text?: string;
   image?: string;
+  attachments?: {
+    type: "image" | "file";
+    url: string;
+    fileName?: string;
+    fileSize?: number;
+    mimeType?: string;
+  }[];
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -29,7 +36,29 @@ const messageSchema = new mongoose.Schema<IMessage>(
         },
         image: {
             type: String
-        }
+        },
+        attachments: [
+          {
+            type: {
+              type: String,
+              enum: ["image", "file"],
+              required: true
+            },
+            url: {
+              type: String,
+              required: true
+            },
+            fileName: {
+              type: String
+            },
+            fileSize: {
+              type: Number
+            },
+            mimeType: {
+              type: String
+            }
+          }
+        ]
     },
     {timestamps: true}
 );
@@ -38,8 +67,12 @@ messageSchema.index({ senderId: 1, receiverId: 1, createdAt: -1 });
 messageSchema.index({ receiverId: 1, senderId: 1, createdAt: -1 });
 
 messageSchema.pre("validate", function (next){
-    if (!this.text && !this.image){
-        return next(new Error("text or image is required"))
+    const hasText = typeof this.text === "string" && this.text.trim().length > 0;
+    const hasImage = typeof this.image === "string" && this.image.trim().length > 0;
+    const hasAttachments = Array.isArray(this.attachments) && this.attachments.length > 0;
+
+    if (!hasText && !hasImage && !hasAttachments){
+        return next(new Error("text or attachment is required"))
     }
     next()
 })

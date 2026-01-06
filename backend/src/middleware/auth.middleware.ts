@@ -5,6 +5,7 @@ import User from "../models/User.js"
 
 interface TokenPayload{
     userId: string
+    iat?: number
 }
 
 export const protectRoute = async (req: Request, res: Response, next: NextFunction) => {
@@ -19,6 +20,17 @@ export const protectRoute = async (req: Request, res: Response, next: NextFuncti
 
         const user = await User.findById((decoded as TokenPayload).userId).select("-password")
         if (!user) return res.status(401).json({success: false, message: "Unauthorized - User not found"});
+        if (user.deletedAt) {
+            return res.status(401).json({success: false, message: "Account deleted"});
+        }
+
+        const tokenIssuedAt = (decoded as TokenPayload).iat;
+        if (user.passwordChangedAt && tokenIssuedAt) {
+            const passwordChangedAtSeconds = Math.floor(user.passwordChangedAt.getTime() / 1000);
+            if (passwordChangedAtSeconds > tokenIssuedAt) {
+                return res.status(401).json({success: false, message: "Session expired. Please log in again."});
+            }
+        }
 
         (req as any).user = user
         next()

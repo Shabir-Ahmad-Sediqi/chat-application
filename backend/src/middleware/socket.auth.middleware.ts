@@ -45,6 +45,15 @@ export const socketAuthMiddleware = async (s: Socket,  next: (err?: Error) => vo
             console.log("Socket Connection Rejected - User Not Found");
             return next(new Error("User Not Found"))
         }
+        if (user.deletedAt) {
+            return next(new Error("Unauthorized - Account deleted"));
+        }
+        if (user.passwordChangedAt && typeof decode.iat === "number") {
+            const passwordChangedAtSeconds = Math.floor(user.passwordChangedAt.getTime() / 1000);
+            if (passwordChangedAtSeconds > decode.iat) {
+                return next(new Error("Unauthorized - Session expired"));
+            }
+        }
 
         socket.user = {
             _id: user._id.toString(),

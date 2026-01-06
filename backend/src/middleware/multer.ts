@@ -1,5 +1,6 @@
 import multer from "multer";
-export const upload = multer(
+
+export const uploadProfileImage = multer(
     {
     storage: multer.memoryStorage(),
     limits: {fileSize: 2 * 1024 * 1024},
@@ -11,3 +12,8 @@ export const upload = multer(
     }, 
 
      });
+
+export const uploadMessageAttachments = multer({
+    storage: multer.memoryStorage(),
+    limits: { fileSize: 5 * 1024 * 1024, files: 5 }
+});

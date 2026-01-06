@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import ActiveTabSwitch from "../components/activeTabSwitch";
 import BorderAnimatedContainer from "../components/borderAnimatedContainer";
 import ChatContainer from "../components/chatContainer";
@@ -7,12 +7,62 @@ import ContactList from "../components/contactList";
 import NoConversationPlaceholder from "../components/noConversationPlaceholder";
 import ProfileHeader from "../components/profileHeader";
 import { useMessageStore } from "../store/useMessageStore";
+import { useAuthStore } from "../store/useAuthStore";
 
 function ChatPage() {
-  const { activeTab, selectedUser } = useMessageStore();
+  const {
+    activeTab,
+    selectedUser,
+    handleUserDeleted,
+    setSelectedUser,
+    fetchBlockedUsers,
+    handleUserBlocked,
+    handleUserUnblocked
+  } = useMessageStore();
+  const { socket } = useAuthStore();
 
   // ONLY for mobile drawer, nothing else
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  useEffect(() => {
+    if (selectedUser && window.innerWidth < 768) {
+      setSidebarOpen(false);
+    }
+    if (!selectedUser && window.innerWidth < 768) {
+      setSidebarOpen(true);
+    }
+  }, [selectedUser]);
+
+  useEffect(() => {
+    if (!socket) return;
+    const handleDeleted = (payload: { userId?: string }) => {
+      if (!payload?.userId) return;
+      handleUserDeleted(payload.userId);
+      if (selectedUser?._id === payload.userId && window.innerWidth < 768) {
+        setSidebarOpen(true);
+      }
+    };
+    const handleBlocked = (payload: { userId?: string }) => {
+      if (!payload?.userId) return;
+      handleUserBlocked(payload.userId);
+    };
+    const handleUnblocked = (payload: { userId?: string }) => {
+      if (!payload?.userId) return;
+      handleUserUnblocked(payload.userId);
+    };
+    socket.on("userDeleted", handleDeleted);
+    socket.on("userBlocked", handleBlocked);
+    socket.on("userUnblocked", handleUnblocked);
+    return () => {
+      socket.off("userDeleted", handleDeleted);
+      socket.off("userBlocked", handleBlocked);
+      socket.off("userUnblocked", handleUnblocked);
+    };
+  }, [socket, handleUserDeleted, selectedUser, handleUserBlocked, handleUserUnblocked]);
+
+  useEffect(() => {
+    fetchBlockedUsers();
+  }, [fetchBlockedUsers]);
 
   return (
     <div className="relative w-full h-screen max-h-screen">
@@ -66,7 +116,10 @@ function ChatPage() {
           <div className="md:hidden flex items-center gap-3 p-3 border-b border-slate-700/30">
             <button
               className="p-2 rounded hover:bg-slate-700/30"
-              onClick={() => setSidebarOpen(true)}
+              onClick={() => {
+                setSelectedUser(null);
+                setSidebarOpen(true);
+              }}
             >
               ☰
             </button>

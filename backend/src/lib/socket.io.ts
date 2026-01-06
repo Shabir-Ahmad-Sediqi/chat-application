@@ -24,6 +24,13 @@ export const getReceiverSocketId = (userId: string) => {
     return userSocketMap[userId]
 }
 
+export const removeUserPresence = (userId: string) => {
+    if (userSocketMap[userId]) {
+        delete userSocketMap[userId]
+        io.emit("getOnlineUsers", Object.keys(userSocketMap))
+    }
+}
+
 // this is for storing online users
 
 const userSocketMap: Record<string, string> = {}; // {userid: socketid}

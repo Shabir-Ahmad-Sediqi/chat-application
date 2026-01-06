@@ -7,6 +7,7 @@ import { sendWelcomeEmail } from "../emails/emailHandler.js";
 import "dotenv/config"
 import imagekit from "../lib/imageKit.js";
 import Message from "../models/message.js";
+import { io, removeUserPresence } from "../lib/socket.io.js";
 
 interface ApiResponse<T>{
     success: boolean;
@@ -18,6 +19,9 @@ export interface PublicUserResponse {
   fullName: string;
   email: string;
   profilePic?: string;
+  username?: string;
+  bio?: string;
+  theme?: "WHITE_BLUE" | "BLACK_GREEN";
 };
 
 interface AuthRequest extends Request {
@@ -68,7 +72,10 @@ export const signUpHandler = async (req: Request, res: Response<ApiResponse<Publ
                     _id: newUser._id.toString(),
                     fullName: newUser.fullName,
                     email: newUser.email,
-                    profilePic: newUser.profilePic
+                    profilePic: newUser.profilePic,
+                    username: newUser.username,
+                    bio: newUser.bio,
+                    theme: newUser.theme
                 }
             })
 
@@ -102,7 +109,12 @@ export const loginHandler = async (req: Request, res: Response<ApiResponse<Publi
 
     try{
         const existingUser = await User.findOne({email});
-        if (!existingUser) return res.status(400).json({success: false, message: "Invalid Credentials"});
+        if (!existingUser || existingUser.deletedAt) return res.status(400).json({success: false, message: "Invalid Credentials"});
+
+        if (!existingUser.themeSetByUser && existingUser.theme !== "BLACK_GREEN") {
+            existingUser.theme = "BLACK_GREEN";
+            await existingUser.save();
+        }
 
         const comparePassword = await bcrypt.compare(password, existingUser.password);
         if (!comparePassword)  return res.status(400).json({success: false, message: "Invalid Credentials"});
@@ -113,10 +125,13 @@ export const loginHandler = async (req: Request, res: Response<ApiResponse<Publi
         res.status(200).json({
             success: true,
             data: {
-                _id: existingUser._id.toString(),
-                fullName: existingUser.fullName,
-                email: existingUser.email,
-                profilePic: existingUser.profilePic
+                    _id: existingUser._id.toString(),
+                    fullName: existingUser.fullName,
+                    email: existingUser.email,
+                    profilePic: existingUser.profilePic,
+                    username: existingUser.username,
+                    bio: existingUser.bio,
+                    theme: existingUser.theme
             }
         })
     }
@@ -163,10 +178,13 @@ export const updateProfile = async (
         res.status(200).json({
             success: true,
             data: {
-                _id: updatedUser._id.toString(),
-                fullName: updatedUser.fullName,
-                email: updatedUser.email,
-                profilePic: updatedUser.profilePic
+                    _id: updatedUser._id.toString(),
+                    fullName: updatedUser.fullName,
+                    email: updatedUser.email,
+                    profilePic: updatedUser.profilePic,
+                    username: updatedUser.username,
+                    bio: updatedUser.bio,
+                    theme: updatedUser.theme
             }
         });
 
@@ -185,14 +203,23 @@ export const isAuthenticated = async (req: AuthRequest, res: Response<ApiRespons
 
         const existingUser = await User.findById(userId);
         if (!existingUser) return res.status(404).json({ success: false, message: "User not found" });
+        if (existingUser.deletedAt) return res.status(401).json({ success: false, message: "Account deleted" });
+
+        if (!existingUser.themeSetByUser && existingUser.theme !== "BLACK_GREEN") {
+            existingUser.theme = "BLACK_GREEN";
+            await existingUser.save();
+        }
 
         res.status(200).json({
             success: true,
             data: {
-                _id: existingUser._id.toString(),
-                fullName: existingUser.fullName,
-                email: existingUser.email,
-                profilePic: existingUser.profilePic
+                    _id: existingUser._id.toString(),
+                    fullName: existingUser.fullName,
+                    email: existingUser.email,
+                    profilePic: existingUser.profilePic,
+                    username: existingUser.username,
+                    bio: existingUser.bio,
+                    theme: existingUser.theme
             }
         });
     } catch (error: unknown) {
@@ -203,13 +230,15 @@ export const isAuthenticated = async (req: AuthRequest, res: Response<ApiRespons
 
 export const deleteAccount = async (req: AuthRequest, res: Response) => {
     const userId = req.user?._id
-    const { password } = req.body 
+    const { password, confirm } = req.body 
 
     try{
         if (!userId) return res.status(401).json({success: false, message: "Unauthorized"})
+        if (confirm !== "DELETE") return res.status(400).json({success: false, message: "Confirmation phrase is required"})
         // find the user in the db
         const user = await User.findById(userId)
         if (!user)return res.status(404).json({success: false, message: "User not found"})
+        if (user.deletedAt) return res.status(400).json({success: false, message: "Account already deleted"})
         // check if password is not null
         if (!password) return res.status(401).json({success: false, message: "Password is required"})
         // compare password with hashed password
@@ -217,13 +246,16 @@ export const deleteAccount = async (req: AuthRequest, res: Response) => {
         if (!comparePassword) return res.status(401).json({success: false, message: "Invalid Credentials"})
 
         const deletedAt = new Date()
-        user.email = `${deletedAt}${user.fullName}@gmail.com`
+        user.deletedAt = deletedAt
+        user.email = `${deletedAt.getTime()}-${user.fullName}@gmail.com`
         user.fullName = "Deleted User"
         await user.save()
 
         // Anonomize his messages
         // todo Delete the user from contacts list and chat history
-     
+        removeUserPresence(userId.toString())
+        io.emit("userDeleted", { userId: userId.toString() })
+        res.cookie("jwt", "", {maxAge: 0})
         res.status(200).json({success: true, message: "User Deleted Successfully"})
 
 
@@ -232,4 +264,164 @@ export const deleteAccount = async (req: AuthRequest, res: Response) => {
         return res.status(500).json({success: false, message: "Internal server error", error})
     }
 
+}
+
+export const changePassword = async (req: AuthRequest, res: Response<ApiResponse<string>>) => {
+    const userId = req.user?._id;
+    const { currentPassword, newPassword, confirmPassword } = req.body;
+
+    try {
+        if (!userId) return res.status(401).json({ success: false, message: "Unauthorized" });
+        if (!currentPassword || !newPassword || !confirmPassword) {
+            return res.status(400).json({ success: false, message: "All fields are required" });
+        }
+        if (newPassword !== confirmPassword) {
+            return res.status(400).json({ success: false, message: "Passwords do not match" });
+        }
+
+        const passwordPolicy = /^(?=.*[A-Za-z])(?=.*\d).{8,}$/;
+        if (!passwordPolicy.test(newPassword)) {
+            return res.status(400).json({ success: false, message: "Password must be at least 8 characters and include a letter and a number" });
+        }
+
+        const user = await User.findById(userId);
+        if (!user) return res.status(404).json({ success: false, message: "User not found" });
+
+        const isMatch = await bcrypt.compare(currentPassword, user.password);
+        if (!isMatch) return res.status(401).json({ success: false, message: "Current password is incorrect" });
+
+        const salt = await bcrypt.genSalt(10);
+        user.password = await bcrypt.hash(newPassword, salt);
+        user.passwordChangedAt = new Date();
+        await user.save();
+
+        generateToken(user._id, res);
+
+        res.status(200).json({ success: true, message: "Password updated successfully" });
+    } catch (error: any) {
+        const message = error?.message || JSON.stringify(error) || "Unknown server error";
+        res.status(500).json({ success: false, message });
+    }
+}
+
+export const updateProfileDetails = async (
+    req: AuthRequest,
+    res: Response<ApiResponse<PublicUserResponse>>
+) => {
+    try {
+        const userId = req.user?._id;
+        if (!userId) return res.status(401).json({ success: false, message: "Unauthorized" });
+
+        const { fullName, username, bio, theme } = req.body;
+        const updatePayload: Record<string, any> = {};
+        const unsetPayload: Record<string, any> = {};
+
+        if (typeof fullName === "string") {
+            const trimmedName = fullName.trim();
+            if (trimmedName.length < 1 || trimmedName.length > 50) {
+                return res.status(400).json({ success: false, message: "Display name must be 1-50 characters" });
+            }
+            updatePayload.fullName = trimmedName;
+        }
+
+        if (typeof username === "string") {
+            const trimmedUsername = username.trim();
+            if (trimmedUsername.length === 0) {
+                unsetPayload.username = 1;
+            } else {
+                const usernameRegex = /^[a-zA-Z0-9_]{3,30}$/;
+                if (!usernameRegex.test(trimmedUsername)) {
+                    return res.status(400).json({ success: false, message: "Username must be 3-30 characters and use letters, numbers, or _" });
+                }
+                const existingUser = await User.findOne({ username: trimmedUsername, deletedAt: null, _id: { $ne: userId } });
+                if (existingUser) {
+                    return res.status(409).json({ success: false, message: "Username already taken" });
+                }
+                updatePayload.username = trimmedUsername;
+            }
+        }
+
+        if (typeof bio === "string") {
+            if (bio.length > 500) {
+                return res.status(400).json({ success: false, message: "Bio must be 500 characters or less" });
+            }
+            updatePayload.bio = bio;
+        }
+
+        if (typeof theme === "string") {
+            if (theme !== "WHITE_BLUE" && theme !== "BLACK_GREEN") {
+                return res.status(400).json({ success: false, message: "Invalid theme selection" });
+            }
+            updatePayload.theme = theme;
+            updatePayload.themeSetByUser = true;
+        }
+
+        if (Object.keys(updatePayload).length === 0 && Object.keys(unsetPayload).length === 0) {
+            return res.status(400).json({ success: false, message: "No changes submitted" });
+        }
+
+        const updatedUser = await User.findByIdAndUpdate(
+            userId,
+            { $set: updatePayload, $unset: unsetPayload },
+            { new: true }
+        );
+
+        if (!updatedUser) return res.status(404).json({ success: false, message: "User not found" });
+
+        res.status(200).json({
+            success: true,
+            data: {
+                _id: updatedUser._id.toString(),
+                fullName: updatedUser.fullName,
+                email: updatedUser.email,
+                profilePic: updatedUser.profilePic,
+                username: updatedUser.username,
+                bio: updatedUser.bio,
+                theme: updatedUser.theme
+            }
+        });
+    } catch (error: any) {
+        const message = error?.message || JSON.stringify(error) || "Unknown server error";
+        res.status(500).json({ success: false, message });
+    }
+}
+
+export const removeProfileImage = async (
+    req: AuthRequest,
+    res: Response<ApiResponse<PublicUserResponse>>
+) => {
+    try {
+        const userId = req.user?._id;
+        if (!userId) return res.status(401).json({ success: false, message: "Unauthorized" });
+
+        const existingUser = await User.findById(userId);
+        if (!existingUser) return res.status(404).json({ success: false, message: "User not found" });
+        if (!existingUser.profilePic) {
+            return res.status(400).json({ success: false, message: "You have not set a profile picture" });
+        }
+
+        const updatedUser = await User.findByIdAndUpdate(
+            userId,
+            { profilePic: "" },
+            { new: true }
+        );
+
+        if (!updatedUser) return res.status(404).json({ success: false, message: "User not found" });
+
+        res.status(200).json({
+            success: true,
+            data: {
+                _id: updatedUser._id.toString(),
+                fullName: updatedUser.fullName,
+                email: updatedUser.email,
+                profilePic: updatedUser.profilePic,
+                username: updatedUser.username,
+                bio: updatedUser.bio,
+                theme: updatedUser.theme
+            }
+        });
+    } catch (error: any) {
+        const message = error?.message || JSON.stringify(error) || "Unknown server error";
+        res.status(500).json({ success: false, message });
+    }
 }

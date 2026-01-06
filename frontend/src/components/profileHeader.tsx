@@ -1,12 +1,13 @@
 import { useRef, useState } from "react";
 import { useAuthStore } from "../store/useAuthStore"
-import { LogOutIcon, VolumeOffIcon, Volume2Icon } from "lucide-react";
+import { LogOutIcon, SettingsIcon, VolumeOffIcon, Volume2Icon } from "lucide-react";
+import { Link } from "react-router";
 import { useMessageStore } from "../store/useMessageStore";
 
 const mouseClickSound = new Audio("/sounds/mouse-click.mp3");
 
 function ProfileHeader() {
-    const {logout, authUser, updateProfile, deleteAccount} = useAuthStore();
+    const {logout, authUser, updateProfile} = useAuthStore();
     const {isSoundEnabled, toggleSound} = useMessageStore();
     const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
@@ -28,8 +29,8 @@ function ProfileHeader() {
     }
   return (
     <div className="p-6 border-b  border-slate-700/50">
-        <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div className="flex items-center gap-3 min-w-0">
                 {/* AVATAR */}
                 <div className="avatar online">
                     <button 
@@ -55,7 +56,7 @@ function ProfileHeader() {
                         className="hidden"
                          />
                 </div>
-                <div> 
+                <div className="min-w-0"> 
                   <h3 className="text-slate-200 font-medium text-base max-w-[180px] truncate">
                     {authUser?.fullName}
                   </h3>
@@ -65,16 +66,18 @@ function ProfileHeader() {
 
             {/* buttons */}
 
-             <div className="flex gap-4 items-center">
-              {/* Delete account */}
-              <button
-               className="text-slate-400 hover:text-slate-200 transition-colors"
-               onClick={deleteAccount}>
-                Delete Account
-              </button>
+             <div className="flex flex-wrap gap-3 items-center md:justify-end">
+              <Link
+                to="/settings"
+                className="text-slate-400 hover:text-slate-200 transition-colors flex items-center gap-1 text-sm min-h-[44px]"
+                aria-label="Open settings"
+              >
+                <SettingsIcon className="size-4" />
+                <span>Settings</span>
+              </Link>
               {/* LOGOUT BTN */}
               <button
-                className="text-slate-400 hover:text-slate-200 transition-colors"
+                className="text-slate-400 hover:text-slate-200 transition-colors min-h-[44px] min-w-[44px]"
                 onClick={logout}
               >
                 <LogOutIcon className="size-5" />
@@ -82,7 +85,7 @@ function ProfileHeader() {
 
           {/* SOUND TOGGLE BTN */}
                 <button
-                  className="text-slate-400 hover:text-slate-200 transition-colors"
+                  className="text-slate-400 hover:text-slate-200 transition-colors min-h-[44px] min-w-[44px]"
                   onClick={() => {
                     // play click sound before toggling
                     mouseClickSound.currentTime = 0; // reset to start

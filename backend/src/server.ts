@@ -3,6 +3,8 @@ import express, { Request, Response } from "express"
 import dotenv from "dotenv"
 import authRoutes from "./routes/auth.route.js"
 import sendMessage from "./routes/message.route.js"
+import userRoutes from "./routes/user.route.js"
+import meRoutes from "./routes/me.route.js"
 import path from "path"
 import { connectDB } from "./lib/db.js"
 import cookieParser from "cookie-parser"
@@ -21,6 +23,8 @@ app.use(cookieParser())
 // routes
 app.use("/api/auth", authRoutes);
 app.use("/api/message", sendMessage)
+app.use("/api/users", userRoutes)
+app.use("/api/me", meRoutes)
 
 // Making the app ready for deployment.
 if (process.env.NODE_ENV === "production"){

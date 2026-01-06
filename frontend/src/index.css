@@ -2,6 +2,99 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --bg: #e8f1fb;
+  --surface: rgba(243, 248, 255, 0.8);
+  --surface-muted: rgba(226, 237, 249, 0.9);
+  --text: #0b1b3a;
+  --muted-text: #4a5d79;
+  --border: #cddbef;
+  --primary: #1d4ed8;
+  --primary-hover: #1e40af;
+  --primary-active: #1e3a8a;
+  --primary-text: #ffffff;
+  --primary-10: rgba(29, 78, 216, 0.12);
+  --primary-20: rgba(29, 78, 216, 0.2);
+  --focus-ring: rgba(29, 78, 216, 0.35);
+  --input-border: #c6d6ee;
+  --input-border-focus: #1d4ed8;
+  --button-primary-bg: #1d4ed8;
+  --button-primary-text: #ffffff;
+  --button-outline-border: #1d4ed8;
+  --danger: #dc2626;
+  --danger-hover: #b91c1c;
+  --input-bg: #eef4ff;
+  --input-text: #0b1b3a;
+  --input-placeholder: #6c7f9b;
+  --bg-gradient: linear-gradient(135deg, #e9f2ff 0%, #e1ecfb 50%, #d8e6f8 100%);
+  --bg-glow-1: radial-gradient(600px 420px at 10% 10%, rgba(59, 130, 246, 0.18), transparent 70%);
+  --bg-glow-2: radial-gradient(500px 360px at 90% 85%, rgba(29, 78, 216, 0.16), transparent 72%);
+  --bg-glow-3: radial-gradient(520px 360px at 45% 40%, rgba(99, 102, 241, 0.12), transparent 70%);
+  --noise-opacity: 0.04;
+}
+
+:root[data-theme="BLACK_GREEN"] {
+  --bg: #0b0f0b;
+  --surface: rgba(17, 24, 39, 0.8);
+  --surface-muted: rgba(15, 23, 42, 0.9);
+  --text: #e5e7eb;
+  --muted-text: #94a3b8;
+  --border: #1f2937;
+  --primary: #22c55e;
+  --primary-hover: #16a34a;
+  --primary-active: #15803d;
+  --primary-text: #052e16;
+  --primary-10: rgba(34, 197, 94, 0.12);
+  --primary-20: rgba(34, 197, 94, 0.2);
+  --focus-ring: rgba(34, 197, 94, 0.4);
+  --input-border: #1f2937;
+  --input-border-focus: #22c55e;
+  --button-primary-bg: #22c55e;
+  --button-primary-text: #052e16;
+  --button-outline-border: #22c55e;
+  --danger: #ef4444;
+  --danger-hover: #dc2626;
+  --input-bg: #0b1220;
+  --input-text: #e5e7eb;
+  --input-placeholder: #64748b;
+  --bg-gradient: linear-gradient(140deg, #0b0f0b 0%, #0a0f14 50%, #0b1218 100%);
+  --bg-glow-1: radial-gradient(520px 420px at 85% 15%, rgba(34, 197, 94, 0.16), transparent 70%);
+  --bg-glow-2: radial-gradient(520px 420px at 15% 85%, rgba(34, 197, 94, 0.12), transparent 72%);
+  --bg-glow-3: radial-gradient(420px 320px at 50% 40%, rgba(16, 185, 129, 0.08), transparent 70%);
+  --noise-opacity: 0.05;
+}
+
+html,
+body {
+  min-height: 100%;
+}
+
+body {
+  background-color: var(--bg);
+  color: var(--text);
+  position: relative;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background-image: var(--bg-gradient), var(--bg-glow-1), var(--bg-glow-2), var(--bg-glow-3);
+  background-attachment: fixed;
+  z-index: -2;
+}
+
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120' viewBox='0 0 120 120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)' opacity='0.6'/%3E%3C/svg%3E");
+  opacity: var(--noise-opacity);
+  pointer-events: none;
+  z-index: -1;
+  mix-blend-mode: soft-light;
+}
+
 @property --border-angle {
   inherits: false;
   initial-value: 0deg;
@@ -9,27 +102,202 @@
 }
 
 .input {
-  @apply w-full bg-slate-800/50 border border-slate-700 rounded-lg py-2 pl-10 pr-4 text-slate-200 placeholder-slate-400 focus:ring-2 focus:ring-cyan-500 focus:border-transparent;
+  @apply w-full rounded-lg py-2 pl-10 pr-4 focus:ring-2 focus:border-transparent;
+  background-color: var(--input-bg);
+  border-color: var(--input-border);
+  color: var(--input-text);
+}
+
+.input:focus {
+  --tw-ring-color: var(--focus-ring);
+}
+
+.input::placeholder {
+  color: var(--input-placeholder);
 }
 
 .auth-input-icon {
-  @apply absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 size-5;
+  @apply absolute left-3 top-1/2 -translate-y-1/2 size-5;
+  color: var(--muted-text);
 }
 
 .auth-input-label {
-  @apply block text-sm font-medium text-slate-300 mb-2;
+  @apply block text-sm font-medium mb-2;
+  color: var(--text);
 }
 
 .auth-badge {
-  @apply inline-flex items-center px-3 py-1 text-xs font-medium rounded-full bg-cyan-500/20 text-cyan-300;
+  @apply inline-flex items-center px-3 py-1 text-xs font-medium rounded-full;
+  background-color: var(--primary-20);
+  color: var(--primary);
 }
 
 .auth-btn {
-  @apply w-full bg-cyan-500 text-white rounded-lg py-2.5 font-medium
-  hover:bg-cyan-600 focus:ring-2 focus:ring-cyan-500;
+  @apply w-full rounded-lg py-2.5 font-medium focus:ring-2;
+  background-color: var(--button-primary-bg);
+  color: var(--button-primary-text);
 }
 
 .auth-link {
-  @apply px-4 py-2 inline-block bg-cyan-500/10 rounded-lg text-cyan-400
-  hover:text-cyan-500 text-sm transition-colors;
+  @apply px-4 py-2 inline-block rounded-lg text-sm transition-colors;
+  background-color: var(--primary-10);
+  color: var(--primary);
+}
+
+.auth-btn:hover {
+  background-color: var(--primary-hover);
+}
+
+.auth-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.auth-btn:focus {
+  --tw-ring-color: var(--focus-ring);
+}
+
+.auth-link:hover {
+  color: var(--primary-hover);
+}
+
+@layer utilities {
+  .bg-slate-900 { background-color: var(--bg) !important; }
+  .bg-slate-900\/50 { background-color: var(--surface) !important; }
+  .bg-slate-900\/60 { background-color: var(--surface) !important; }
+  .bg-slate-800 { background-color: var(--surface) !important; }
+  .bg-slate-800\/50 { background-color: var(--surface) !important; }
+  .bg-slate-800\/60 { background-color: var(--surface) !important; }
+  .bg-slate-800\/30 { background-color: var(--surface) !important; }
+  .bg-slate-700 { background-color: var(--surface-muted) !important; }
+  .bg-slate-700\/50 { background-color: var(--surface-muted) !important; }
+  .bg-slate-700\/70 { background-color: var(--surface-muted) !important; }
+  .bg-slate-600 { background-color: var(--surface-muted) !important; }
+
+  .text-slate-100,
+  .text-slate-200,
+  .text-slate-300 { color: var(--text) !important; }
+  .text-slate-400,
+  .text-slate-500 { color: var(--muted-text) !important; }
+  .text-slate-950 { color: var(--primary-text) !important; }
+
+  .border-slate-700,
+  .border-slate-700\/50,
+  .border-slate-700\/40,
+  .border-slate-600\/30,
+  .border-slate-500 { border-color: var(--border) !important; }
+
+  .bg-cyan-500 { background-color: var(--primary) !important; }
+  .bg-cyan-600 { background-color: var(--primary-hover) !important; }
+  .bg-cyan-500\/10 { background-color: var(--primary-10) !important; }
+  .bg-cyan-500\/20 { background-color: var(--primary-20) !important; }
+  .text-cyan-300,
+  .text-cyan-400,
+  .text-cyan-500 { color: var(--primary) !important; }
+  .hover\:text-cyan-500:hover { color: var(--primary-hover) !important; }
+  .hover\:bg-cyan-600:hover { background-color: var(--primary-hover) !important; }
+  .hover\:bg-cyan-500:hover { background-color: var(--primary-hover) !important; }
+
+  .from-cyan-500 { --tw-gradient-from: var(--primary) !important; }
+  .to-cyan-600 { --tw-gradient-to: var(--primary-hover) !important; }
+  .hover\:from-cyan-600:hover { --tw-gradient-from: var(--primary-hover) !important; }
+  .hover\:to-cyan-700:hover { --tw-gradient-to: var(--primary-hover) !important; }
+  .from-cyan-500\/20 { --tw-gradient-from: var(--primary-20) !important; }
+  .to-cyan-400\/10 { --tw-gradient-to: var(--primary-10) !important; }
+  .from-slate-800\/20 { --tw-gradient-from: var(--surface-muted) !important; }
+
+  .bg-red-500 { background-color: var(--danger) !important; }
+  .hover\:bg-red-400:hover { background-color: var(--danger-hover) !important; }
+  .text-red-200,
+  .text-red-500 { color: var(--danger) !important; }
+  .border-red-500\/30,
+  .border-red-500\/40 { border-color: var(--danger) !important; }
+
+  .focus\:ring-cyan-500:focus { --tw-ring-color: var(--primary) !important; }
+
+  .bg-emerald-400 { background-color: var(--primary) !important; }
+}
+
+input,
+textarea,
+select {
+  border-color: var(--input-border);
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+  outline: none;
+  border-color: var(--input-border-focus);
+  box-shadow: 0 0 0 2px var(--focus-ring);
+}
+
+input.border-red-500:focus,
+textarea.border-red-500:focus,
+select.border-red-500:focus {
+  border-color: var(--danger);
+}
+
+button.border-slate-700,
+button.border-slate-700\/50,
+button.border-slate-700\/40,
+button.border-slate-600\/30,
+button.border-slate-500 {
+  border-color: var(--button-outline-border) !important;
+}
+
+@keyframes motionFadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes motionScaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes motionShake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-6px); }
+  40% { transform: translateX(6px); }
+  60% { transform: translateX(-4px); }
+  80% { transform: translateX(4px); }
+}
+
+.motion-fade-up {
+  animation: motionFadeUp 500ms ease-out both;
+}
+
+.motion-scale-in {
+  animation: motionScaleIn 450ms ease-out both;
+}
+
+.motion-shake {
+  animation: motionShake 350ms ease-in-out both;
+}
+
+.motion-stagger-1 { animation-delay: 80ms; }
+.motion-stagger-2 { animation-delay: 140ms; }
+.motion-stagger-3 { animation-delay: 200ms; }
+.motion-stagger-4 { animation-delay: 260ms; }
+.motion-stagger-5 { animation-delay: 320ms; }
+
+@media (prefers-reduced-motion: reduce) {
+  .motion-fade-up,
+  .motion-scale-in,
+  .motion-shake {
+    animation: none;
+  }
 }

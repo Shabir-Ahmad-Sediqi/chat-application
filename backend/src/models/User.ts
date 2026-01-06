@@ -5,7 +5,13 @@ export interface IUser extends Document{
     fullName: string,
     email: string,
     password: string,
-    profilePic?: string
+    profilePic?: string,
+    username?: string,
+    bio?: string,
+    passwordChangedAt?: Date,
+    deletedAt?: Date | null,
+    theme?: "WHITE_BLUE" | "BLACK_GREEN"
+    themeSetByUser?: boolean
 };
 
 
@@ -28,9 +34,39 @@ const userSchema = new mongoose.Schema<IUser>({
     profilePic: {
         type: String,
         default: ""
+    },
+    username: {
+        type: String,
+        sparse: true,
+        trim: true
+    },
+    bio: {
+        type: String,
+        default: ""
+    },
+    passwordChangedAt: {
+        type: Date
+    },
+    deletedAt: {
+        type: Date,
+        default: null
+    },
+    theme: {
+        type: String,
+        enum: ["WHITE_BLUE", "BLACK_GREEN"],
+        default: "BLACK_GREEN"
+    },
+    themeSetByUser: {
+        type: Boolean,
+        default: false
     }
 
 }, {timestamps: true} // CreatedAT & UpdatedAt
+);
+
+userSchema.index(
+    { username: 1 },
+    { unique: true, partialFilterExpression: { deletedAt: { $eq: null } } }
 );
 
 const User = mongoose.model<IUser>("User", userSchema);
