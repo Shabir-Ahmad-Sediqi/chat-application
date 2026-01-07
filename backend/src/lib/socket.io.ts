@@ -7,12 +7,17 @@ import { socketAuthMiddleware } from "../middleware/socket.auth.middleware.js";
 import { Socket } from "socket.io";
 import { AuthenticatedSocket } from "../middleware/socket.auth.middleware.js";
 
+const allowedOrigins = (process.env.CLIENT_URL || "")
+    .split(",")
+    .map((origin) => origin.trim())
+    .filter(Boolean);
+
 const app = express();
 const server = http.createServer(app);
 
 const io = new Server(server, {
     cors: {
-        origin: process.env.CLIENT_URL,
+        origin: allowedOrigins.length ? allowedOrigins : true,
         credentials: true
     }
 });

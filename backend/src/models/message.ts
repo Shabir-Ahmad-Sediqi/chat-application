@@ -7,11 +7,15 @@ export interface IMessage extends Document {
   text?: string;
   image?: string;
   attachments?: {
+    id: string;
     type: "image" | "file";
     url: string;
+    signedUrl?: string;
     fileName?: string;
     fileSize?: number;
     mimeType?: string;
+    width?: number;
+    height?: number;
   }[];
   createdAt?: Date;
   updatedAt?: Date;
@@ -39,6 +43,10 @@ const messageSchema = new mongoose.Schema<IMessage>(
         },
         attachments: [
           {
+            id: {
+              type: String,
+              required: true
+            },
             type: {
               type: String,
               enum: ["image", "file"],
@@ -48,6 +56,9 @@ const messageSchema = new mongoose.Schema<IMessage>(
               type: String,
               required: true
             },
+            signedUrl: {
+              type: String
+            },
             fileName: {
               type: String
             },
@@ -56,6 +67,12 @@ const messageSchema = new mongoose.Schema<IMessage>(
             },
             mimeType: {
               type: String
+            },
+            width: {
+              type: Number
+            },
+            height: {
+              type: Number
             }
           }
         ]

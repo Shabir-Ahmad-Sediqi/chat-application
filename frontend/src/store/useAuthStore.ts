@@ -3,8 +3,9 @@ import { axiosInstance } from "../libs/axios";
 import toast from "react-hot-toast";
 import { io, Socket } from "socket.io-client";
 import { useMessageStore } from "./useMessageStore";
+import { WS_BASE_URL } from "../libs/config";
 
-const BASE_URL = import.meta.env.MODE === "development" ? "http://localhost:3000" : "/";
+const BASE_URL = WS_BASE_URL;
 
 interface ApiResponse<T>{
     success: boolean;

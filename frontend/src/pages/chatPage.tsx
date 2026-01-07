@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { ArrowLeft, Menu, X } from "lucide-react";
 import ActiveTabSwitch from "../components/activeTabSwitch";
 import BorderAnimatedContainer from "../components/borderAnimatedContainer";
 import ChatContainer from "../components/chatContainer";
@@ -6,6 +7,7 @@ import ChatsList from "../components/chatList";
 import ContactList from "../components/contactList";
 import NoConversationPlaceholder from "../components/noConversationPlaceholder";
 import ProfileHeader from "../components/profileHeader";
+import UploadDebugOverlay from "../components/uploadDebugOverlay";
 import { useMessageStore } from "../store/useMessageStore";
 import { useAuthStore } from "../store/useAuthStore";
 
@@ -77,8 +79,7 @@ function ChatPage() {
   return (
     <div className="relative w-full h-screen max-h-screen">
       <BorderAnimatedContainer>
-
-        {/* LEFT SIDEBAR — becomes drawer on mobile */}
+        {/* LEFT SIDEBAR becomes drawer on mobile */}
         <div
           className={`
             fixed inset-y-0 left-0 z-40 w-72 bg-slate-800/50 backdrop-blur-sm flex flex-col
@@ -92,8 +93,9 @@ function ChatPage() {
             <button
               onClick={() => setSidebarOpen(false)}
               className="p-2 rounded hover:bg-slate-700/30"
+              aria-label="Close sidebar"
             >
-              ✕
+              <X className="h-5 w-5" />
             </button>
           </div>
 
@@ -111,7 +113,7 @@ function ChatPage() {
           </div>
         </div>
 
-        {/* OVERLAY — mobile only */}
+        {/* OVERLAY mobile only */}
         {sidebarOpen && (
           <div
             className="fixed inset-0 bg-black/40 z-30 md:hidden"
@@ -120,36 +122,46 @@ function ChatPage() {
         )}
 
         {/* RIGHT SIDE */}
-        <div className="flex-1 flex flex-col bg-slate-900/50 backdrop-blur-sm h-screen">
-
+        <div
+          className={`flex-1 flex flex-col bg-slate-900/50 backdrop-blur-sm h-screen ${
+            sidebarOpen ? "hidden md:flex" : "flex"
+          }`}
+        >
           {/* Mobile top bar */}
           <div className="md:hidden flex items-center gap-3 p-3 border-b border-slate-700/30">
-            <button
-              className="p-2 rounded hover:bg-slate-700/30"
-              onClick={() => {
-                setSelectedUser(null);
-                setSidebarOpen(true);
-              }}
-            >
-              ☰
-            </button>
+            {selectedUser ? (
+              <button
+                className="p-2 rounded hover:bg-slate-700/30"
+                onClick={() => {
+                  setSelectedUser(null);
+                  setSidebarOpen(true);
+                }}
+                aria-label="Back to contacts"
+              >
+                <ArrowLeft className="h-5 w-5" />
+              </button>
+            ) : (
+              <button
+                className="p-2 rounded hover:bg-slate-700/30"
+                onClick={() => setSidebarOpen(true)}
+                aria-label="Open contacts"
+              >
+                <Menu className="h-5 w-5" />
+              </button>
+            )}
             <span className="text-sm">
               {selectedUser ? selectedUser.fullName : "Messages"}
             </span>
           </div>
 
           <div className="flex-1 min-h-0">
-            {selectedUser ? (
-              <ChatContainer />
-            ) : (
-              <NoConversationPlaceholder />
-            )}
+            {selectedUser ? <ChatContainer /> : <NoConversationPlaceholder />}
           </div>
         </div>
       </BorderAnimatedContainer>
+      <UploadDebugOverlay />
     </div>
   );
 }
 
 export default ChatPage;
- 

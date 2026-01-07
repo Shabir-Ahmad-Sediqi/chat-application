@@ -20,14 +20,30 @@ export interface Message {
   text?: string;
   image?: string;
   attachments?: {
+    id?: string;
     type: "image" | "file";
     url: string;
+    signedUrl?: string;
     fileName?: string;
     fileSize?: number;
     mimeType?: string;
+    width?: number;
+    height?: number;
   }[];
   createdAt: string;
   updatedAt: string;
+}
+
+export interface UploadLog {
+  id: string;
+  status: "start" | "success" | "error";
+  fileName?: string;
+  fileSize?: number;
+  mimeType?: string;
+  statusCode?: number;
+  errorCode?: string;
+  url?: string;
+  timestamp: string;
 }
 
 interface MessageStore{
@@ -54,6 +70,7 @@ interface MessageStore{
     isMessagesLoading: boolean,
     isSoundEnabled: boolean,
     lastMessageAtByUser: Record<string, string>,
+    uploadLogs: UploadLog[],
 
     // functions
     toggleSound: () => void,
@@ -74,6 +91,7 @@ interface MessageStore{
     sendMessage: (messageData: FormData) => Promise<void>,
     subscribeToMessage: () => void,
     unSubscribeFromMessage: () => void,
+    logUploadEvent: (log: UploadLog) => void,
 
 }
 
@@ -95,6 +113,7 @@ export const useMessageStore = create<MessageStore>((set, get) => ({
     isMessagesLoading: false,
     isSoundEnabled: localStorage.getItem("isSoundEnabled") === "true",
     lastMessageAtByUser: {},
+    uploadLogs: [],
 
     toggleSound: () => {
         localStorage.setItem("isSoundEnabled", String(!get().isSoundEnabled));
@@ -335,6 +354,16 @@ export const useMessageStore = create<MessageStore>((set, get) => ({
         const tempId = `temp-${Date.now()}`
         const message = messageData.get("text")
         const files = messageData.getAll("attachments") as File[];
+        files.forEach((file) => {
+            get().logUploadEvent({
+                id: `upload-${Date.now()}-${file.name}`,
+                status: "start",
+                fileName: file.name,
+                fileSize: file.size,
+                mimeType: file.type,
+                timestamp: new Date().toISOString()
+            });
+        });
         const attachments = files.map((file) => ({
             type: (file.type.startsWith("image/") ? "image" : "file") as "image" | "file",
             url: URL.createObjectURL(file),
@@ -365,13 +394,37 @@ export const useMessageStore = create<MessageStore>((set, get) => ({
         try{
             const res = await axiosInstance.post(`/message/send/${selectedUser?._id}`,messageData)
             if (res.data.success & res.data.data){
-                set({messages: messages.concat(res.data.data)})
+                const returnedAttachments = res.data.data.attachments || [];
+                returnedAttachments.forEach((attachment: any) => {
+                    get().logUploadEvent({
+                        id: `upload-${Date.now()}-${attachment.fileName || attachment.url}`,
+                        status: "success",
+                        fileName: attachment.fileName,
+                        fileSize: attachment.fileSize,
+                        mimeType: attachment.mimeType,
+                        url: attachment.signedUrl || attachment.url,
+                        statusCode: res.status,
+                        timestamp: new Date().toISOString()
+                    });
+                });
+                set((state) => {
+                    const withoutTemp = state.messages.filter((msg) => msg._id !== tempId);
+                    const exists = withoutTemp.some((msg) => msg._id === res.data.data._id);
+                    return { messages: exists ? withoutTemp : withoutTemp.concat(res.data.data) };
+                });
             }
         }catch(error: any){
             set({messages: messages})
             const message =
             error?.response?.data?.error?.message ?? error?.response?.data?.message ?? error?.message ?? "Sending Messages Failed";
             toast.error(message);
+            get().logUploadEvent({
+                id: `upload-${Date.now()}-error`,
+                status: "error",
+                statusCode: error?.response?.status,
+                errorCode: error?.response?.data?.error?.code,
+                timestamp: new Date().toISOString()
+            });
         }
     },
 
@@ -410,5 +463,10 @@ export const useMessageStore = create<MessageStore>((set, get) => ({
     unSubscribeFromMessage: () => {
         const socket = useAuthStore.getState().socket;
         socket?.off("newMessage");
+    },
+    logUploadEvent: (log) => {
+        const logs = get().uploadLogs;
+        const nextLogs = [log, ...logs].slice(0, 12);
+        set({ uploadLogs: nextLogs });
     }
 }));

@@ -294,6 +294,14 @@ button.border-slate-500 {
 .motion-stagger-4 { animation-delay: 260ms; }
 .motion-stagger-5 { animation-delay: 320ms; }
 
+.pb-safe {
+  padding-bottom: calc(env(safe-area-inset-bottom) + 0.75rem);
+}
+
+.chat-scroll {
+  padding-bottom: calc(var(--composer-height, 88px) + env(safe-area-inset-bottom));
+}
+
 @media (prefers-reduced-motion: reduce) {
   .motion-fade-up,
   .motion-scale-in,

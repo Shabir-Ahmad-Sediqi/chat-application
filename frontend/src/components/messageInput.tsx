@@ -138,7 +138,7 @@ function MessageInput() {
         </div>
       )}
 
-      <form onSubmit={handleSendMessage} className="max-w-3xl mx-auto flex space-x-4">
+      <form onSubmit={handleSendMessage} className="max-w-3xl mx-auto flex space-x-3">
         <input
           type="text"
           value={text}
@@ -147,7 +147,7 @@ function MessageInput() {
             isSoundEnabled && playRandomKeyStrokeSounds();
           }}
           disabled={isSelectedUserDeleted || isSelectedUserBlocked || isSelectedUserBlockingMe}
-          className="flex-1 bg-slate-800/50 border border-slate-700/50 rounded-lg py-2 px-4 disabled:opacity-50"
+          className="flex-1 bg-slate-800/50 border border-slate-700/50 rounded-lg py-3 px-4 text-sm md:text-base disabled:opacity-50"
           placeholder={
             isSelectedUserDeleted
               ? "This user has been deleted."
@@ -178,7 +178,7 @@ function MessageInput() {
           type="button"
           onClick={() => imageInputRef.current?.click()}
           disabled={isSelectedUserDeleted || isSelectedUserBlocked || isSelectedUserBlockingMe}
-          className={`bg-slate-800/50 text-slate-400 hover:text-slate-200 rounded-lg px-4 transition-colors disabled:opacity-50 ${
+          className={`bg-slate-800/50 text-slate-400 hover:text-slate-200 rounded-lg h-11 w-11 flex items-center justify-center transition-colors disabled:opacity-50 ${
             attachments.some((attachment) => attachment.type === "image") ? "text-cyan-500" : ""
           }`}
         >
@@ -188,7 +188,7 @@ function MessageInput() {
           type="button"
           onClick={() => fileInputRef.current?.click()}
           disabled={isSelectedUserDeleted || isSelectedUserBlocked || isSelectedUserBlockingMe}
-          className={`bg-slate-800/50 text-slate-400 hover:text-slate-200 rounded-lg px-4 transition-colors disabled:opacity-50 ${
+          className={`bg-slate-800/50 text-slate-400 hover:text-slate-200 rounded-lg h-11 w-11 flex items-center justify-center transition-colors disabled:opacity-50 ${
             attachments.some((attachment) => attachment.type === "file") ? "text-cyan-500" : ""
           }`}
         >
@@ -203,7 +203,7 @@ function MessageInput() {
             isSelectedUserBlockingMe ||
             (!text.trim() && attachments.length === 0)
           }
-          className="bg-gradient-to-r from-cyan-500 to-cyan-600 text-slate-950 rounded-lg px-4 py-2
+          className="bg-gradient-to-r from-cyan-500 to-cyan-600 text-slate-950 rounded-lg h-11 w-11 flex items-center justify-center
                 font-medium hover:from-cyan-600 hover:to-cyan-700 transition-all disabled:opacity-50
                 disabled:cursor-not-allowed"
         >

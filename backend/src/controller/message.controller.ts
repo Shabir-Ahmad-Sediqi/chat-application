@@ -1,4 +1,5 @@
 import { Request, Response } from "express";
+import { randomUUID } from "crypto";
 import Message from "../models/message.js";
 import HiddenChat from "../models/HiddenChat.js";
 import UserBlock from "../models/UserBlock.js";
@@ -62,7 +63,10 @@ export const sendMessage = async (req: AuthRequest, res: Response) => {
         const files = (req.files as Express.Multer.File[]) || [];
 
         if (!senderId) {
-            return res.status(401).json({ message: "Unauthorized" });
+            return res.status(401).json({
+                success: false,
+                error: { code: "AUTH_REQUIRED", message: "Unauthorized" }
+            });
         }
 
         const normalizedText = typeof text === "string" ? text.trim() : "";
@@ -95,13 +99,26 @@ export const sendMessage = async (req: AuthRequest, res: Response) => {
 
         const attachments = [];
         for (const file of files) {
+            if (!file?.mimetype) {
+                return res.status(400).json({
+                    success: false,
+                    error: { code: "UNSUPPORTED_FILE_TYPE", message: "Unsupported file type." }
+                });
+            }
             if (file.size > 5 * 1024 * 1024) {
                 return res.status(400).json({
                     success: false,
-                    error: { code: "FILE_TOO_LARGE", message: "File exceeds 5MB limit." }
+                    error: { code: "UPLOAD_TOO_LARGE", message: "File exceeds 5MB limit." }
                 });
             }
             let uploaded;
+            console.log("Upload start", {
+                fileName: file.originalname,
+                size: file.size,
+                mimeType: file.mimetype,
+                senderId,
+                receiverId
+            });
             try {
                 uploaded = await imagekit.upload({
                     file: file.buffer,
@@ -109,20 +126,44 @@ export const sendMessage = async (req: AuthRequest, res: Response) => {
                 });
             } catch (uploadError: any) {
                 const uploadMessage = uploadError?.message || "Upload failed";
+                console.log("Upload failed", {
+                    fileName: file.originalname,
+                    size: file.size,
+                    mimeType: file.mimetype,
+                    senderId,
+                    receiverId,
+                    error: uploadMessage
+                });
                 return res.status(502).json({
                     success: false,
                     error: {
-                        code: "UPLOAD_FAILED",
+                        code: "STORAGE_UPLOAD_FAILED",
                         message: `Failed to upload ${file.originalname}: ${uploadMessage}`
                     }
                 });
             }
+            console.log("Upload success", {
+                fileName: file.originalname,
+                size: file.size,
+                mimeType: file.mimetype,
+                senderId,
+                receiverId,
+                url: uploaded?.url
+            });
+            const signedUrl =
+                typeof (uploaded as { signedUrl?: string })?.signedUrl === "string"
+                    ? (uploaded as { signedUrl?: string }).signedUrl
+                    : undefined;
             attachments.push({
+                id: uploaded?.fileId || randomUUID(),
                 type: file.mimetype.startsWith("image/") ? "image" : "file",
                 url: uploaded.url,
+                signedUrl,
                 fileName: file.originalname,
                 fileSize: file.size,
-                mimeType: file.mimetype
+                mimeType: file.mimetype,
+                width: uploaded?.width,
+                height: uploaded?.height
             });
         }
 

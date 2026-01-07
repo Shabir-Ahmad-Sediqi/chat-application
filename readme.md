@@ -60,13 +60,27 @@ EMAIL_FROM_NAME="Your Name"
 EMAIL_FROM="your-email@example.com"
 
 CLIENT_URL="http://localhost:5173"
+COOKIE_SAMESITE="strict"
 
 IMAGEKIT_PUBLIC_KEY="<your_imagekit_public_key>"
 IMAGEKIT_PRIVATE_KEY="<your_imagekit_private_key>"
 IMAGEKIT_ENDPOINT_URL="https://ik.imagekit.io/<your_imagekit_id>"
+IMAGEKIT_HEALTHCHECK_WRITE_TEST="false"
+
+# Optional MIME allowlists (comma-separated). If unset, defaults to allow all.
+ALLOWED_IMAGE_MIME_TYPES="image/jpeg,image/png,image/webp,image/gif,image/avif"
+ALLOWED_FILE_MIME_TYPES=""
 
 ARCJET_KEY="<your_arcjet_key>"
 ARCJET_ENV=development
+```
+
+Frontend `.env` (Vite):
+```env
+VITE_API_BASE_URL="http://localhost:3000/api"
+VITE_WS_BASE_URL="http://localhost:3000"
+VITE_ASSET_BASE_URL=""
+VITE_UPLOAD_DEBUG="false"
 ```
 
 3) Run the app
@@ -101,6 +115,14 @@ Frontend
 - Default theme is Black + Green. Users can switch in Settings.
 - Messages accept text, images, or files (up to 5MB each).
 - Blocking is enforced server-side on every send.
+
+## Production checklist
+
+- Set `CLIENT_URL` to a comma-separated list of allowed origins.
+- Ensure `COOKIE_SAMESITE="none"` if frontend and backend are on different domains; HTTPS required.
+- Set reverse proxy upload limits (e.g. Nginx `client_max_body_size 6m;`).
+- Confirm HTTPS end-to-end (no mixed content) and storage URLs are absolute.
+- Use `/api/health/uploads` to validate ImageKit configuration and optional write-test.
 
 ## Contributing
 
