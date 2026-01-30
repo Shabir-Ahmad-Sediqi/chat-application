@@ -2,7 +2,7 @@
 
 A modern, full-stack real-time chat app with a premium, theme-aware UI, image and file messaging, and strong account controls.
 
-## Highlights
+## Highlights.
 
 - Real-time 1:1 messaging with presence
 - Image and file attachments (up to 5MB)
